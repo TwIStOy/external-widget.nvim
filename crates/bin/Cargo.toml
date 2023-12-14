@@ -1,0 +1,15 @@
+[package]
+name = "external-widget"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "external-widget"
+path = "src/main.rs"
+
+[dependencies]
+nvim-rs = { workspace = true }
+async-trait = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+rmpv = { workspace = true }
