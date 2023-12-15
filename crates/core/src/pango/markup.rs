@@ -116,3 +116,9 @@ impl MarkupSpanStack {
             .for_each(|span| span.to_markup_close(res))
     }
 }
+
+impl Default for MarkupSpanStack {
+    fn default() -> Self {
+        Self::new()
+    }
+}

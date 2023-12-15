@@ -1,13 +1,10 @@
 [workspace]
 resolver = "2"
-members = [
-  "crates/bin",
-  "crates/core",
-  "crates/widgets"
-]
+members = ["crates/bin", "crates/core", "crates/widgets"]
 
 [workspace.dependencies]
 external-widget-core = { path = "crates/core" }
+external-widget-widgets = { path = "crates/widgets" }
 
 nvim-rs = { version = "0.6.0", features = ["use_tokio"] }
 async-trait = "0.1.74"
@@ -17,4 +14,3 @@ rmpv = { version = "1.0.1", features = ["with-serde"] }
 cosmic-text = "0.10.0"
 anyhow = "1.0.75"
 thiserror = "1.0.50"
-

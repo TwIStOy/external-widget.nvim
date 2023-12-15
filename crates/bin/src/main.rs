@@ -110,15 +110,19 @@ async fn process_connection(tcp: TcpStream) {
     }
 }
 
-#[tokio::main]
-async fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7000").await.unwrap();
+// #[tokio::main]
+// async fn main() {
+//     let listener = TcpListener::bind("127.0.0.1:7000").await.unwrap();
 
-    loop {
-        let (tcp, addr) = listener.accept().await.unwrap();
-        println!("Accepted connection, {:?}, {:?}", tcp, addr);
-        tokio::spawn(async move {
-            process_connection(tcp).await;
-        });
-    }
+//     loop {
+//         let (tcp, addr) = listener.accept().await.unwrap();
+//         println!("Accepted connection, {:?}, {:?}", tcp, addr);
+//         tokio::spawn(async move {
+//             process_connection(tcp).await;
+//         });
+//     }
+// }
+
+fn main() {
+    external_widget_widgets::taffy_test().unwrap();
 }
