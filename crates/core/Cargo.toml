@@ -9,7 +9,10 @@ async-trait = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 rmpv = { workspace = true }
-cosmic-text = { worksapce = true }
+anyhow = { workspace = true }
 
+serde = { version = "1.0.193", features = ["derive"] }
+rmp-serde = "1.1.2"
 pango = "0.18.3"
+futures = "0.3.29"
 

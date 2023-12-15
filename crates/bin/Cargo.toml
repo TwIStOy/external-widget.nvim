@@ -8,6 +8,8 @@ name = "external-widget"
 path = "src/main.rs"
 
 [dependencies]
+external-widget-core = { workspace = true }
+
 nvim-rs = { workspace = true }
 async-trait = { workspace = true }
 tokio = { workspace = true }

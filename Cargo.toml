@@ -7,11 +7,13 @@ members = [
 ]
 
 [workspace.dependencies]
+external-widget-core = { path = "crates/core" }
+
 nvim-rs = { version = "0.6.0", features = ["use_tokio"] }
 async-trait = "0.1.74"
 tokio = { version = "1.35.0" }
 tokio-util = { version = "0.7.10", features = ["compat"] }
-rmpv = "1.0.1"
+rmpv = { version = "1.0.1", features = ["with-serde"] }
 cosmic-text = "0.10.0"
 anyhow = "1.0.75"
 thiserror = "1.0.50"
