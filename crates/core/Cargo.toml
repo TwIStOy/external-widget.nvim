@@ -11,3 +11,5 @@ tokio-util = { workspace = true }
 rmpv = { workspace = true }
 cosmic-text = { worksapce = true }
 
+pango = "0.18.3"
+

@@ -5,10 +5,11 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
-thiserror = { workspace }
+thiserror = { workspace = true }
 
 taffy = "0.3.18"
 cosmic-text = "0.10.0"
 comrak = "0.20.0"
 image = "0.24.7"
+pango = "0.18.3"
 
