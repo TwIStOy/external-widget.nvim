@@ -13,3 +13,5 @@ async-trait = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 rmpv = { workspace = true }
+headless_chrome = { version = "1.0.8", features = ["fetch"] }
+anyhow = "1.0.75"

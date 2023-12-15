@@ -4,7 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = { workspace = true }
+thiserror = { workspace }
+
 taffy = "0.3.18"
 cosmic-text = "0.10.0"
 comrak = "0.20.0"
+image = "0.24.7"
 
