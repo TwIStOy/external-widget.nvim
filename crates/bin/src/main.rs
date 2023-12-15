@@ -5,6 +5,7 @@ use std::{env, error::Error, fs};
 use async_trait::async_trait;
 
 use external_widget_core::nvim::hl_props_from_group;
+use external_widget_core::pango::MarkupProperties;
 use rmpv::Value;
 
 use tokio::{io::Stdout, net::TcpListener};
@@ -44,10 +45,11 @@ impl Handler for NeovimHandler {
         nvim: Neovim<<Self as Handler>::Writer>,
     ) {
         println!("handle_notify, {}", name);
-        println!(
-            "hl: {:?}",
-            hl_props_from_group("Normal", &nvim).await.unwrap()
-        );
+        let ret = hl_props_from_group("Normal".to_string(), &nvim)
+            .await
+            .unwrap();
+        let ret: MarkupProperties = ret.into();
+        println!("hl: {:?}", ret);
     }
 }
 

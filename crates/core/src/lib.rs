@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
-mod font;
-mod pango;
 mod color;
+mod font;
 pub mod nvim;
-
+pub mod pango;

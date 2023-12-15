@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::fmt::Write;
 
 pub struct Color {
     r: u8,
@@ -12,7 +13,7 @@ impl Color {
         Self { r, g, b, a }
     }
 
-    fn from_u32(v: u32) -> Self {
+    pub fn from_u32(v: u32) -> Self {
         if v <= 0xffffff {
             // 24-bit, no alpha in this
             Self {
@@ -30,8 +31,6 @@ impl Color {
             }
         }
     }
-
-    // fn from_value(v: rmpv::Value) -> anyhow::Result<Self> {}
 }
 
 impl Display for Color {

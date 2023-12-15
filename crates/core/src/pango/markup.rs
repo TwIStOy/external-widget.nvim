@@ -2,12 +2,15 @@ use anyhow::Context;
 use std::collections::HashMap;
 use std::fmt::Write;
 
+#[derive(Debug, Clone)]
 pub struct MarkupProperties(HashMap<String, String>);
 
+#[derive(Debug, Clone)]
 pub struct MarkupSpan {
     pub properties: MarkupProperties,
 }
 
+#[derive(Debug, Clone)]
 pub struct MarkupSpanStack {
     stack: Vec<MarkupSpan>,
 }
@@ -30,6 +33,23 @@ impl MarkupProperties {
             .iter()
             .try_for_each(|(k, v)| write!(res, "{}=\"{}\"", k, v))
             .context("Failed to write markup")
+    }
+
+    pub fn merge(mut self, other: Self) -> Self {
+        self.0.extend(other.0);
+        self
+    }
+}
+
+impl Default for MarkupProperties {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Default for MarkupSpan {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
