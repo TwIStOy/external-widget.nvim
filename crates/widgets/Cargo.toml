@@ -4,12 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+external-widget-core = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
+pango = { workspace = true }
+cairo-rs = { workspace = true }
+pangocairo = { workspace = true }
 
 taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "440843c700455363383e0a4fc365a15deebd4717" }
 comrak = "0.20.0"
 image = "0.24.7"
-pango = "0.18.3"
-cairo-rs = { version = "0.18.3", features = ["png"] }
-pangocairo = "0.18.0"

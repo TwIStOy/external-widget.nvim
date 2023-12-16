@@ -1,26 +1,38 @@
-use std::sync::Arc;
+use std::{fmt::Display, sync::Arc};
 
-use taffy::{Size, Style};
+use external_widget_core::RenderCtx;
+use taffy::{NodeId, Size, Style};
 
-use crate::widget::{Widget, WidgetTree};
+use crate::{widget::Widget, WidgetTree};
 
 #[derive(Debug)]
 pub struct MarkupParagraph {
     markup: String,
-    layout: pango::Layout,
+    pango_layout: pango::Layout,
 }
 
 impl MarkupParagraph {
     pub fn new(ctx: &cairo::Context, markup: String) -> Self {
         let layout = pangocairo::create_layout(ctx);
-        Self { markup, layout }
+        layout.set_markup(&markup);
+        Self {
+            markup,
+            pango_layout: layout,
+        }
+    }
+}
+
+impl Display for MarkupParagraph {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.markup)
     }
 }
 
 impl Widget for MarkupParagraph {
-    fn register(self: Arc<Self>, tree: &mut WidgetTree) -> anyhow::Result<()> {
-        tree.new_leaf_with_context(Style::default(), self)?;
-        Ok(())
+    fn register(
+        self: Arc<Self>, tree: &mut WidgetTree,
+    ) -> anyhow::Result<NodeId> {
+        tree.new_leaf_with_context(Style::default(), self)
     }
 
     fn measure(
@@ -35,12 +47,12 @@ impl Widget for MarkupParagraph {
             }
         });
         if width_constraint < 0.0 {
-            self.layout.set_width(-1);
+            self.pango_layout.set_width(-1);
         } else {
-            self.layout
+            self.pango_layout
                 .set_width(width_constraint as i32 * pango::SCALE);
         }
-        let (width, height) = self.layout.pixel_size();
+        let (width, height) = self.pango_layout.pixel_size();
         Size {
             width: width as f32,
             height: height as f32,
@@ -48,10 +60,12 @@ impl Widget for MarkupParagraph {
     }
 
     fn render(
-        &self, ctx: &cairo::Context, layout: &taffy::Layout,
-        _parent_abs_location: taffy::Point<f32>,
-    ) {
-        layout.location;
-        // layout.position
+        &self, ctx: &RenderCtx, layout: &taffy::Layout,
+        parent_abs_location: taffy::Point<f32>,
+    ) -> anyhow::Result<()> {
+        let location = parent_abs_location + layout.location;
+        ctx.move_to(location.x as f64, location.y as f64);
+        pangocairo::show_layout(ctx.inner(), &self.pango_layout);
+        Ok(())
     }
 }

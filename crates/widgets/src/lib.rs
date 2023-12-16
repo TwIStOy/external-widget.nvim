@@ -1,95 +1,64 @@
+mod support;
 mod widget;
+mod widget_tree;
 mod widgets;
 
-use taffy::prelude::*;
+use std::{io::Write, sync::Arc};
 
-use taffy::prelude::*;
+use external_widget_core::RenderCtx;
+pub use widget::Widget;
+pub use widget_tree::WidgetTree;
+pub use widgets::*;
 
-pub fn taffy_test() -> Result<(), taffy::TaffyError> {
-    let mut taffy: TaffyTree<()> = TaffyTree::new();
+const MARKUPS: &[&str] = &[
+    r##"<span foreground="#cad3f6" background="#1e2031" size="15pt" font_family="MonoLisa"><span><span><span font_size="130%" foreground="#eed4a0"><span>function <span font_family="MonoLisa" foreground="#8bd5cb">main</span></span></span></span></span></span>"##,
+    r##"<span foreground="#cad3f6" background="#1e2031" size="15pt" font_family="MonoLisa"><span><span><span>→ <span font_family="MonoLisa" foreground="#8bd5cb">int</span></span></span></span></span>"##,
+    r##"<span foreground="#cad3f6" background="#1e2031" size="15pt" font_family="MonoLisa"><span><span><span>Parameters<span>:</span></span></span></span></span>"##,
+    r##"<span foreground="#cad3f6" background="#1e2031" size="15pt" font_family="MonoLisa"><span><span><span> - <span><span font_family="MonoLisa" foreground="#8bd5cb">int argc</span></span></span></span></span></span>"##,
+    r##"<span foreground="#cad3f6" background="#1e2031" size="15pt" font_family="MonoLisa"><span><span><span> - <span><span font_family="MonoLisa" foreground="#8bd5cb">const char * argv</span></span></span></span></span></span>"##,
+    r##"<span foreground="#cad3f6" background="#1e2031" size="15pt" font_family="MonoLisa"><span><span><span font_family="MonoLisa"><span foreground="#7dc4e5">public</span><span foreground="#939ab8">:</span> <span foreground="#eed4a0">int</span> <span foreground="#8aadf5"><span foreground="#cad3f6">main</span></span><span foreground="#939ab8">(</span><span foreground="#eed4a0">int</span> <span foreground="#cad3f6">argc</span><span foreground="#939ab8">,</span> <span foreground="#cad3f6">const</span> <span foreground="#cad3f6">char</span> <span foreground="#91d7e4">*</span><span foreground="#cad3f6">argv</span><span foreground="#939ab8">)</span></span></span></span></span>"##,
+];
 
-    // left
-    let child_t1 = taffy.new_leaf(Style {
-        size: Size {
-            width: Dimension::Length(5.0),
-            height: Dimension::Length(5.0),
-        },
-        margin: Rect {
-            left: LengthPercentageAuto::Length(10.0),
-            right: LengthPercentageAuto::Length(10.0),
-            top: LengthPercentageAuto::Length(10.0),
-            bottom: LengthPercentageAuto::Length(10.0),
-        },
-        ..Default::default()
-    })?;
+pub fn taffy_test() -> anyhow::Result<()> {
+    let surface =
+        cairo::ImageSurface::create(cairo::Format::ARgb32, 1000, 1000)?;
+    let ctx = cairo::Context::new(&surface)?;
+    let ctx = RenderCtx::new(ctx);
 
-    let div1 = taffy.new_with_children(
-        Style {
-            size: Size {
-                width: Dimension::Percent(0.5),
-                height: Dimension::Percent(1.0),
-            },
-            margin: Rect {
-                left: LengthPercentageAuto::Length(10.0),
-                right: LengthPercentageAuto::Length(10.0),
-                top: LengthPercentageAuto::Length(10.0),
-                bottom: LengthPercentageAuto::Length(10.0),
-            },
-            // justify_content: JustifyContent::Center,
-            ..Default::default()
-        },
-        &[child_t1],
-    )?;
+    // let title = Arc::new(Column::new(vec![
+    //     Arc::new(Container::new(Arc::new(MarkupParagraph::new(
+    //         &ctx,
+    //         "<span size=\"xx-large\">Hello</span>".to_string(),
+    //     )))),
+    //     Arc::new(Container::new(Arc::new(MarkupParagraph::new(
+    //         &ctx,
+    //         "<span size=\"xx-large\">World</span>".to_string(),
+    //     )))),
+    // ]));
 
-    // right
-    let child_t2 = taffy.new_leaf(Style {
-        size: Size {
-            width: Dimension::Length(5.0),
-            height: Dimension::Length(5.0),
-        },
-        ..Default::default()
-    })?;
+    let title = Arc::new(Column::new(
+        MARKUPS
+            .iter()
+            .map(|markup| {
+                Arc::new(MarkupParagraph::new(ctx.inner(), markup.to_string()))
+                    as Arc<dyn Widget>
+            })
+            .collect(),
+    ));
 
-    let div2 = taffy.new_with_children(
-        Style {
-            size: Size {
-                width: Dimension::Percent(0.5),
-                height: Dimension::Percent(1.0),
-            },
-            // justify_content: JustifyContent::Center,
-            ..Default::default()
-        },
-        &[child_t2],
-    )?;
+    let mut tree = WidgetTree::new();
+    let root = title.register(&mut tree)?;
 
-    let container = taffy.new_with_children(
-        Style {
-            size: Size {
-                width: Dimension::Percent(1.0),
-                height: Dimension::Percent(1.0),
-            },
-            ..Default::default()
-        },
-        &[div1, div2],
-    )?;
+    tree.set_root(root);
+    tree.print_tree();
 
-    taffy.compute_layout(
-        container,
-        Size {
-            height: AvailableSpace::Definite(100.0),
-            width: AvailableSpace::Definite(100.0),
-        },
-    )?;
+    tree.draw_from_root(&ctx)?;
 
-    println!("node: {:#?}", taffy.layout(container));
-
-    println!("div1: {:#?}", taffy.layout(div1));
-    println!("div2: {:#?}", taffy.layout(div2));
-
-    println!("child1: {:#?}", taffy.layout(child_t1));
-    println!("child2: {:#?}", taffy.layout(child_t2));
-
-    taffy.print_tree(container);
+    // write to /tmp/test.png
+    let mut file = std::fs::File::create("/tmp/test.png")?;
+    let mut stream = std::io::BufWriter::new(&mut file);
+    surface.write_to_png(&mut stream)?;
+    stream.flush()?;
 
     Ok(())
 }

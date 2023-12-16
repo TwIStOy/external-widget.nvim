@@ -1,11 +1,10 @@
-use std::fmt::Display;
-use std::fmt::Write;
+use std::fmt::{Debug, Display};
 
 pub struct Color {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
 }
 
 impl Color {
@@ -40,6 +39,12 @@ impl Display for Color {
             "#{:02x}{:02x}{:02x}{:02x}",
             self.r, self.g, self.b, self.a
         )
+    }
+}
+
+impl Debug for Color {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(self, f)
     }
 }
 

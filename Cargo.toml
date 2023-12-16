@@ -14,3 +14,6 @@ rmpv = { version = "1.0.1", features = ["with-serde"] }
 cosmic-text = "0.10.0"
 anyhow = "1.0.75"
 thiserror = "1.0.50"
+pango = "0.18.3"
+cairo-rs = { version = "0.18.3", features = ["png"] }
+pangocairo = "0.18.0"
