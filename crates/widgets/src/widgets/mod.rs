@@ -1,7 +1,11 @@
 mod column;
 mod container;
 mod markup;
+mod md_doc;
+mod row;
 
 pub use column::Column;
 pub use container::Container;
 pub use markup::MarkupParagraph;
+pub use md_doc::md2markup;
+pub use row::Row;

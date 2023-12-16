@@ -642,6 +642,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "comrak",
  "external-widget-core",
  "external-widget-widgets",
  "headless_chrome",
