@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use external_widget_core::{MeasureCtx, RenderCtx, Widget, WidgetTree};
+use external_widget_core::{
+    print_element_marker, MeasureCtx, RenderCtx, Widget, WidgetTree,
+};
 use taffy::Style;
 
 #[derive(Debug)]
@@ -56,5 +58,13 @@ impl Widget for Column {
         parent_abs_location: taffy::Point<f32>,
     ) -> anyhow::Result<()> {
         Ok(())
+    }
+
+    fn print_element(&self, last: bool, depth: usize) {
+        print_element_marker(last, depth);
+        println!("Column");
+        for (i, child) in self.children.iter().enumerate() {
+            child.print_element(i == self.children.len() - 1, depth + 1);
+        }
     }
 }

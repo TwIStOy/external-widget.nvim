@@ -1,6 +1,8 @@
 use std::{fmt::Display, sync::Arc};
 
-use external_widget_core::{MeasureCtx, RenderCtx, Widget, WidgetTree};
+use external_widget_core::{
+    print_element_marker, MeasureCtx, RenderCtx, Widget, WidgetTree,
+};
 use taffy::{NodeId, Size, Style};
 
 #[derive(Debug)]
@@ -62,5 +64,10 @@ impl Widget for MarkupParagraph {
         pango_layout.set_markup(&self.markup);
         pangocairo::show_layout(ctx.inner(), &pango_layout);
         Ok(())
+    }
+
+    fn print_element(&self, last: bool, depth: usize) {
+        print_element_marker(last, depth);
+        println!("MarkupParagraph: {}", self.markup);
     }
 }

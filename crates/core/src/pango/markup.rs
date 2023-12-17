@@ -117,6 +117,12 @@ impl MarkupSpanStack {
             .context("Failed to write markup")
     }
 
+    pub fn to_markup_open_owned(&self) -> anyhow::Result<String> {
+        let mut res = String::new();
+        self.to_markup_open(&mut res)?;
+        Ok(res)
+    }
+
     pub fn to_markup_close(&self, res: &mut String) {
         self.stack
             .iter()

@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use external_widget_core::{Color, RenderCtx, Widget, WidgetTree};
+use external_widget_core::{
+    print_element_marker, Color, RenderCtx, Widget, WidgetTree,
+};
 use taffy::prelude::*;
 
 #[derive(Debug)]
@@ -35,6 +37,12 @@ impl Bar {
     }
 }
 
+impl Default for Bar {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Widget for Bar {
     fn register(
         self: Arc<Self>, tree: &mut WidgetTree,
@@ -62,5 +70,10 @@ impl Widget for Bar {
         ctx.set_color(&self.color);
         ctx.fill()?;
         Ok(())
+    }
+
+    fn print_element(&self, last: bool, depth: usize) {
+        print_element_marker(last, depth);
+        println!("Bar");
     }
 }

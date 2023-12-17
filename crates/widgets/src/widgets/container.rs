@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use external_widget_core::{Color, MeasureCtx, RenderCtx, Widget, WidgetTree};
+use external_widget_core::{
+    print_element_marker, Color, MeasureCtx, RenderCtx, Widget, WidgetTree,
+};
 use taffy::prelude::*;
 
 use crate::support::BoxConstraints;
@@ -117,5 +119,13 @@ impl Widget for Container {
         ctx.restore()?;
 
         Ok(())
+    }
+
+    fn print_element(&self, last: bool, depth: usize) {
+        print_element_marker(last, depth);
+        println!("Container");
+        if let Some(c) = &self.child {
+            c.print_element(true, depth + 1);
+        }
     }
 }
