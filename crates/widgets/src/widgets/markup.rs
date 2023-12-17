@@ -1,24 +1,16 @@
 use std::{fmt::Display, sync::Arc};
 
-use external_widget_core::RenderCtx;
+use external_widget_core::{MeasureCtx, RenderCtx, Widget, WidgetTree};
 use taffy::{NodeId, Size, Style};
-
-use crate::{widget::Widget, WidgetTree};
 
 #[derive(Debug)]
 pub struct MarkupParagraph {
     markup: String,
-    pango_layout: pango::Layout,
 }
 
 impl MarkupParagraph {
-    pub fn new(ctx: &cairo::Context, markup: String) -> Self {
-        let layout = pangocairo::create_layout(ctx);
-        layout.set_markup(&markup);
-        Self {
-            markup,
-            pango_layout: layout,
-        }
+    pub fn new(markup: String) -> Self {
+        Self { markup }
     }
 }
 
@@ -36,7 +28,7 @@ impl Widget for MarkupParagraph {
     }
 
     fn measure(
-        &self, known_dimensions: taffy::Size<Option<f32>>,
+        &self, ctx: &MeasureCtx, known_dimensions: taffy::Size<Option<f32>>,
         available_space: taffy::Size<taffy::AvailableSpace>,
     ) -> Size<f32> {
         let width_constraint = known_dimensions.width.unwrap_or_else(|| {
@@ -46,13 +38,14 @@ impl Widget for MarkupParagraph {
                 taffy::AvailableSpace::MaxContent => -1.0,
             }
         });
+        let layout = pangocairo::create_layout(ctx.inner());
+        layout.set_markup(&self.markup);
         if width_constraint < 0.0 {
-            self.pango_layout.set_width(-1);
+            layout.set_width(-1);
         } else {
-            self.pango_layout
-                .set_width(width_constraint as i32 * pango::SCALE);
+            layout.set_width(width_constraint as i32 * pango::SCALE);
         }
-        let (width, height) = self.pango_layout.pixel_size();
+        let (width, height) = layout.pixel_size();
         Size {
             width: width as f32,
             height: height as f32,
@@ -65,7 +58,9 @@ impl Widget for MarkupParagraph {
     ) -> anyhow::Result<()> {
         let location = parent_abs_location + layout.location;
         ctx.move_to(location.x as f64, location.y as f64);
-        pangocairo::show_layout(ctx.inner(), &self.pango_layout);
+        let pango_layout = pangocairo::create_layout(ctx.inner());
+        pango_layout.set_markup(&self.markup);
+        pangocairo::show_layout(ctx.inner(), &pango_layout);
         Ok(())
     }
 }

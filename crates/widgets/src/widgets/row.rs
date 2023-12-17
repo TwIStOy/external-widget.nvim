@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
-use external_widget_core::RenderCtx;
+use external_widget_core::{MeasureCtx, RenderCtx, Widget, WidgetTree};
 use taffy::Style;
-
-use crate::widget::Widget;
 
 #[derive(Debug)]
 pub struct Row {
@@ -18,7 +16,7 @@ impl Row {
 
 impl Widget for Row {
     fn measure(
-        &self, known_dimensions: taffy::Size<Option<f32>>,
+        &self, ctx: &MeasureCtx, known_dimensions: taffy::Size<Option<f32>>,
         available_space: taffy::Size<taffy::AvailableSpace>,
     ) -> taffy::prelude::Size<f32> {
         let width_constraint = known_dimensions.width.unwrap_or({
@@ -32,7 +30,7 @@ impl Widget for Row {
     }
 
     fn register(
-        self: Arc<Self>, tree: &mut crate::WidgetTree,
+        self: Arc<Self>, tree: &mut WidgetTree,
     ) -> anyhow::Result<taffy::prelude::NodeId> {
         let mut children = vec![];
         for child in &self.children {

@@ -1,10 +1,8 @@
 use std::sync::Arc;
 
+use super::{MeasureCtx, RenderCtx, Widget};
 use anyhow::{bail, Context};
-use external_widget_core::RenderCtx;
 use taffy::{AvailableSpace, NodeId, Point, TaffyTree, TraversePartialTree};
-
-use crate::widget::Widget;
 
 pub struct WidgetTree {
     root: Option<NodeId>,
@@ -19,7 +17,7 @@ impl WidgetTree {
         }
     }
 
-    pub fn print_tree(&mut self) {
+    pub fn print_tree(&mut self, measure_ctx: &MeasureCtx) {
         if let Some(root) = &self.root {
             // must compute layout before printing
             self.tree
@@ -30,7 +28,11 @@ impl WidgetTree {
                         height: AvailableSpace::Definite(600.),
                     },
                     |known_dimensions, available_space, _, ctx| {
-                        ctx.unwrap().measure(known_dimensions, available_space)
+                        ctx.unwrap().measure(
+                            measure_ctx,
+                            known_dimensions,
+                            available_space,
+                        )
                     },
                 )
                 .unwrap();

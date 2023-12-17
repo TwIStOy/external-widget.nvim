@@ -1,13 +1,9 @@
 mod support;
-mod widget;
-mod widget_tree;
 mod widgets;
 
 use std::{io::Write, sync::Arc};
 
-use external_widget_core::RenderCtx;
-pub use widget::Widget;
-pub use widget_tree::WidgetTree;
+use external_widget_core::{MeasureCtx, RenderCtx, Widget, WidgetTree};
 pub use widgets::*;
 
 const MARKUPS: &[&str] = &[
@@ -22,25 +18,15 @@ const MARKUPS: &[&str] = &[
 pub fn taffy_test() -> anyhow::Result<()> {
     let surface =
         cairo::ImageSurface::create(cairo::Format::ARgb32, 1000, 1000)?;
-    let ctx = cairo::Context::new(&surface)?;
-    let ctx = RenderCtx::new(ctx);
-
-    // let title = Arc::new(Column::new(vec![
-    //     Arc::new(Container::new(Arc::new(MarkupParagraph::new(
-    //         &ctx,
-    //         "<span size=\"xx-large\">Hello</span>".to_string(),
-    //     )))),
-    //     Arc::new(Container::new(Arc::new(MarkupParagraph::new(
-    //         &ctx,
-    //         "<span size=\"xx-large\">World</span>".to_string(),
-    //     )))),
-    // ]));
+    let ctx = Arc::new(cairo::Context::new(&surface)?);
+    let render_ctx = RenderCtx::new(ctx.clone());
+    let measure_ctx = MeasureCtx::new(ctx.clone());
 
     let title = Arc::new(Column::new(
         MARKUPS
             .iter()
             .map(|markup| {
-                Arc::new(MarkupParagraph::new(ctx.inner(), markup.to_string()))
+                Arc::new(MarkupParagraph::new(markup.to_string()))
                     as Arc<dyn Widget>
             })
             .collect(),
@@ -50,9 +36,9 @@ pub fn taffy_test() -> anyhow::Result<()> {
     let root = title.register(&mut tree)?;
 
     tree.set_root(root);
-    tree.print_tree();
+    tree.print_tree(&measure_ctx);
 
-    tree.draw_from_root(&ctx)?;
+    tree.draw_from_root(&render_ctx)?;
 
     // write to /tmp/test.png
     let mut file = std::fs::File::create("/tmp/test.png")?;

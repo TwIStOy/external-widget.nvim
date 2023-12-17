@@ -1,11 +1,13 @@
+use std::sync::Arc;
+
 use crate::Color;
 
 pub struct RenderCtx {
-    ctx: cairo::Context,
+    ctx: Arc<cairo::Context>,
 }
 
 impl RenderCtx {
-    pub fn new(ctx: cairo::Context) -> Self {
+    pub fn new(ctx: Arc<cairo::Context>) -> Self {
         Self { ctx }
     }
 
@@ -83,5 +85,16 @@ impl RenderCtx {
     pub fn fill_preserve(&self) -> anyhow::Result<()> {
         self.ctx.fill_preserve()?;
         Ok(())
+    }
+
+    pub fn rectangle<X, Y, W, H>(&self, x: X, y: Y, width: W, height: H)
+    where
+        X: Into<f64>,
+        Y: Into<f64>,
+        W: Into<f64>,
+        H: Into<f64>,
+    {
+        self.ctx
+            .rectangle(x.into(), y.into(), width.into(), height.into());
     }
 }

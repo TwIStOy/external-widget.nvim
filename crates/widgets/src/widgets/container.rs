@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use external_widget_core::{Color, RenderCtx};
+use external_widget_core::{Color, MeasureCtx, RenderCtx, Widget, WidgetTree};
 use taffy::prelude::*;
 
-use crate::{support::BoxConstraints, widget::Widget};
+use crate::support::BoxConstraints;
 
 #[derive(Debug)]
 pub struct ContainerBorderStyle {
@@ -34,18 +34,18 @@ impl Container {
 
 impl Widget for Container {
     fn measure(
-        &self, known_dimensions: Size<Option<f32>>,
+        &self, ctx: &MeasureCtx, known_dimensions: Size<Option<f32>>,
         available_space: Size<AvailableSpace>,
     ) -> Size<f32> {
         if let Some(c) = &self.child {
-            c.measure(known_dimensions, available_space)
+            c.measure(ctx, known_dimensions, available_space)
         } else {
             taffy::Size::ZERO
         }
     }
 
     fn register(
-        self: std::sync::Arc<Self>, tree: &mut crate::WidgetTree,
+        self: std::sync::Arc<Self>, tree: &mut WidgetTree,
     ) -> anyhow::Result<NodeId> {
         let style = Style {
             min_size: Size {

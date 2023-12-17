@@ -17,3 +17,4 @@ thiserror = "1.0.50"
 pango = "0.18.3"
 cairo-rs = { version = "0.18.3", features = ["png"] }
 pangocairo = "0.18.0"
+taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "440843c700455363383e0a4fc365a15deebd4717" }

@@ -14,3 +14,4 @@ pangocairo = { workspace = true }
 taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "440843c700455363383e0a4fc365a15deebd4717" }
 comrak = "0.20.0"
 image = "0.24.7"
+glib = "0.18.4"

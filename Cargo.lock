@@ -666,6 +666,7 @@ dependencies = [
  "rmp-serde",
  "rmpv",
  "serde",
+ "taffy",
  "tokio",
  "tokio-util",
 ]
@@ -678,6 +679,7 @@ dependencies = [
  "cairo-rs",
  "comrak",
  "external-widget-core",
+ "glib",
  "image",
  "pango",
  "pangocairo",

@@ -7,7 +7,7 @@ pub struct MarkupProperties(HashMap<String, String>);
 
 #[derive(Debug, Clone)]
 pub struct MarkupSpan {
-    pub properties: MarkupProperties,
+    properties: MarkupProperties,
 }
 
 #[derive(Debug, Clone)]
@@ -86,6 +86,14 @@ impl MarkupSpan {
         res.push_str(text.as_ref());
         self.to_markup_close(res);
         Ok(())
+    }
+
+    pub fn wrap_text_owned(
+        &self, text: impl AsRef<str>,
+    ) -> anyhow::Result<String> {
+        let mut res = String::new();
+        self.wrap_text(text, &mut res)?;
+        Ok(res)
     }
 }
 

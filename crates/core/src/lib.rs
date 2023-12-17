@@ -4,4 +4,4 @@ pub mod nvim;
 pub mod pango;
 
 pub use color::Color;
-pub use graphics::RenderCtx;
+pub use graphics::*;

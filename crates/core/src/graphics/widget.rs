@@ -1,14 +1,13 @@
 use std::{fmt::Debug, sync::Arc};
 
-use external_widget_core::RenderCtx;
 use taffy::{prelude::*, Point};
 
-use crate::widget_tree::WidgetTree;
+use super::{MeasureCtx, RenderCtx, WidgetTree};
 
 pub trait Widget: Debug {
     /// Measure the widget, returns the size of the widget.
     fn measure(
-        &self, _known_dimensions: taffy::Size<Option<f32>>,
+        &self, _ctx: &MeasureCtx, _known_dimensions: taffy::Size<Option<f32>>,
         _available_space: taffy::Size<taffy::AvailableSpace>,
     ) -> Size<f32> {
         Size::ZERO
