@@ -60,12 +60,14 @@ impl Widget for Row {
         Ok(())
     }
 
-    fn print_element(&self, last: bool, depth: usize) {
-        print_element_marker(last, depth);
+    fn print_element_impl(&self, lasts: &mut Vec<bool>) {
+        print_element_marker(lasts);
         println!("Row");
         for (i, child) in self.children.iter().enumerate() {
             let last = i == self.children.len() - 1;
-            child.print_element(last, depth + 1);
+            lasts.push(last);
+            child.print_element_impl(lasts);
+            lasts.pop();
         }
     }
 }

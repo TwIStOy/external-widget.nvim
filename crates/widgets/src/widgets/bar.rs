@@ -72,8 +72,8 @@ impl Widget for Bar {
         Ok(())
     }
 
-    fn print_element(&self, last: bool, depth: usize) {
-        print_element_marker(last, depth);
+    fn print_element_impl(&self, lasts: &mut Vec<bool>) {
+        print_element_marker(lasts);
         println!("Bar");
     }
 }

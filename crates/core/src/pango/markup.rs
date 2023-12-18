@@ -129,6 +129,16 @@ impl MarkupSpanStack {
             .rev()
             .for_each(|span| span.to_markup_close(res))
     }
+
+    pub fn wrap_text_owned(
+        &self, text: impl AsRef<str>,
+    ) -> anyhow::Result<String> {
+        let mut res = String::new();
+        self.to_markup_open(&mut res)?;
+        res.push_str(text.as_ref());
+        self.to_markup_close(&mut res);
+        Ok(res)
+    }
 }
 
 impl Default for MarkupSpanStack {

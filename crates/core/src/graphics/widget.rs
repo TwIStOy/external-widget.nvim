@@ -24,23 +24,30 @@ pub trait Widget: Debug {
         parent_abs_location: Point<f32>,
     ) -> anyhow::Result<()>;
 
-    fn print_element(&self, last: bool, depth: usize);
+    fn print_element(&self) {
+        let mut lasts = vec![];
+        self.print_element_impl(&mut lasts);
+    }
+
+    fn print_element_impl(&self, lasts: &mut Vec<bool>);
 }
 
 const TREE_MARKER_LAST: &str = "└── ";
 const TREE_MARKER_MIDDLE: &str = "├── ";
+const TREE_MARKER_VERTICAL: &str = "│   ";
 
-pub fn print_element_marker(last: bool, depth: usize) {
-    let indent = " ".repeat((depth.max(1) - 1) * 4);
-    if depth >= 1 {
-        print!(
-            "{}{}",
-            indent,
-            if last {
-                TREE_MARKER_LAST
+pub fn print_element_marker(lasts: &[bool]) {
+    for (i, last) in lasts.iter().enumerate() {
+        if i == lasts.len() - 1 {
+            if *last {
+                print!("{}", TREE_MARKER_LAST);
             } else {
-                TREE_MARKER_MIDDLE
+                print!("{}", TREE_MARKER_MIDDLE);
             }
-        );
+        } else if *last {
+            print!("{}", " ".repeat(4));
+        } else {
+            print!("{}", TREE_MARKER_VERTICAL);
+        }
     }
 }

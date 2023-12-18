@@ -60,11 +60,14 @@ impl Widget for Column {
         Ok(())
     }
 
-    fn print_element(&self, last: bool, depth: usize) {
-        print_element_marker(last, depth);
+    fn print_element_impl(&self, lasts: &mut Vec<bool>) {
+        print_element_marker(lasts);
         println!("Column");
         for (i, child) in self.children.iter().enumerate() {
-            child.print_element(i == self.children.len() - 1, depth + 1);
+            let last = i == self.children.len() - 1;
+            lasts.push(last);
+            child.print_element_impl(lasts);
+            lasts.pop();
         }
     }
 }

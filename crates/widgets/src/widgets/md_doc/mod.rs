@@ -14,5 +14,5 @@ pub fn md2markup(md: &str) {
     let mut converter = converter::Converter::new();
     let res = converter.visit_node(root).unwrap();
 
-    res.print_element(true, 0);
+    res.print_element();
 }

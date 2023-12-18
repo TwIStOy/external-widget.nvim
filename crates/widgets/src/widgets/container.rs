@@ -121,11 +121,13 @@ impl Widget for Container {
         Ok(())
     }
 
-    fn print_element(&self, last: bool, depth: usize) {
-        print_element_marker(last, depth);
+    fn print_element_impl(&self, lasts: &mut Vec<bool>) {
+        print_element_marker(lasts);
         println!("Container");
         if let Some(c) = &self.child {
-            c.print_element(true, depth + 1);
+            lasts.push(true);
+            c.print_element_impl(lasts);
+            lasts.pop();
         }
     }
 }

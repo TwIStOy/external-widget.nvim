@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use anyhow::bail;
-use comrak::nodes::{AstNode, NodeCode, NodeCodeBlock, NodeHeading, NodeValue};
+use comrak::nodes::{
+    AstNode, NodeCode, NodeCodeBlock, NodeHeading, NodeList, NodeValue,
+};
 use external_widget_core::{
     pango::{MarkupProperties, MarkupSpan, MarkupSpanStack},
     Widget,
@@ -55,6 +57,20 @@ impl Converter {
             bail!("Unsupported inline node: {:?}", value)
         }
     }
+
+    fn push_span(&mut self, span: MarkupSpan) -> anyhow::Result<()> {
+        span.to_markup_open(&mut self.pending_markup_line)?;
+        self.stack.push(span);
+        Ok(())
+    }
+
+    fn pop_span(&mut self) -> anyhow::Result<()> {
+        let span = self.stack.pop();
+        if let Some(span) = span {
+            span.to_markup_close(&mut self.pending_markup_line);
+        }
+        Ok(())
+    }
 }
 
 /// **Inline**
@@ -67,7 +83,7 @@ impl Converter {
             return Ok(None);
         }
         self.stack.to_markup_close(&mut self.pending_markup_line);
-        let mut ret = String::new();
+        let mut ret = markup_start;
         std::mem::swap(&mut self.pending_markup_line, &mut ret);
         Ok(Some(Arc::new(MarkupParagraph::new(ret))))
     }
@@ -171,8 +187,8 @@ impl Converter {
             ),
             NodeValue::FrontMatter(_) => todo!(),
             NodeValue::BlockQuote => todo!(),
-            NodeValue::List(_) => todo!(),
-            NodeValue::Item(_) => todo!(),
+            NodeValue::List(node_list) => self.visit_list(node, node_list),
+            NodeValue::Item(node_list) => self.visit_list_item(node, node_list),
             NodeValue::CodeBlock(codeblock) => self.visit_code_block(codeblock),
             NodeValue::Paragraph => self.visit_virtual_block(
                 node,
@@ -218,7 +234,7 @@ impl Converter {
         &mut self, node: &'a AstNode<'a>, heading: &NodeHeading,
     ) -> anyhow::Result<Arc<dyn Widget>> {
         let mut props = MarkupProperties::new();
-        if !heading.setext && heading.level <= 3 {
+        if heading.level <= 3 {
             props.insert(
                 "font_size".into(),
                 HEADING_FONT_SIZES[(heading.level as usize) - 1].into(),
@@ -227,14 +243,58 @@ impl Converter {
         self.visit_virtual_block(node, VirtialBlockWrapper::Row, Some(props))
     }
 
+    fn visit_list<'a>(
+        &mut self, node: &'a AstNode<'a>, node_list: &NodeList,
+    ) -> anyhow::Result<Arc<dyn Widget>> {
+        let mut lines: Vec<Arc<dyn Widget>> = Vec::new();
+        for c in node.children() {
+            let w = self.visit_node(c)?;
+            lines.push(w);
+        }
+        Ok(Arc::new(Column::new(lines)))
+    }
+
+    fn visit_list_item<'a>(
+        &mut self, node: &'a AstNode<'a>, node_list: &NodeList,
+    ) -> anyhow::Result<Arc<dyn Widget>> {
+        let mut block = BlockContext::new();
+        let marker = match node_list.list_type {
+            comrak::nodes::ListType::Bullet => {
+                (node_list.bullet_char as char).to_string()
+            }
+            comrak::nodes::ListType::Ordered => {
+                let start = node_list.start;
+                let offset = node_list.marker_offset;
+                let delimitor = match node_list.delimiter {
+                    comrak::nodes::ListDelimType::Period => ". ",
+                    comrak::nodes::ListDelimType::Paren => ") ",
+                };
+                format!("{}{}", start + offset, delimitor)
+            }
+        };
+        block.block_widgets.push(Arc::new(MarkupParagraph::new(
+            self.stack.wrap_text_owned(marker)?,
+        )));
+        for c in node.children() {
+            if c.data.borrow().value.block() {
+                let w = self.visit_block_node(c)?;
+                block.push(w);
+            } else {
+                self.visit_inline_node(c, &mut block)?;
+                let remaining = self.pack_markup_line()?;
+                block.push_or(remaining);
+            }
+        }
+        Ok(Arc::new(Row::new(block.block_widgets)))
+    }
+
     fn visit_virtual_block<'a>(
         &mut self, node: &'a AstNode<'a>, wrapper: VirtialBlockWrapper,
         props: Option<MarkupProperties>,
     ) -> anyhow::Result<Arc<dyn Widget>> {
         let mut block = BlockContext::new();
         if let Some(props) = &props {
-            self.stack
-                .push(MarkupSpan::new_with_properties(props.clone()));
+            self.push_span(MarkupSpan::new_with_properties(props.clone()))?;
         }
         // visit childrens
         for child in node.children() {
@@ -248,7 +308,7 @@ impl Converter {
             }
         }
         if props.is_some() {
-            self.stack.pop();
+            self.pop_span()?;
         }
         let ret: Arc<dyn Widget> = match wrapper {
             VirtialBlockWrapper::Column => {
