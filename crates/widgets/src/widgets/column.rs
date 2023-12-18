@@ -21,7 +21,7 @@ impl Widget for Column {
         &self, _ctx: &MeasureCtx, known_dimensions: taffy::Size<Option<f32>>,
         available_space: taffy::Size<taffy::AvailableSpace>,
     ) -> taffy::prelude::Size<f32> {
-        let width_constraint = known_dimensions.width.unwrap_or({
+        let _width_constraint = known_dimensions.width.unwrap_or({
             match available_space.width {
                 taffy::AvailableSpace::Definite(width) => width,
                 taffy::AvailableSpace::MinContent => 0.0,
@@ -54,8 +54,8 @@ impl Widget for Column {
     }
 
     fn render(
-        &self, ctx: &RenderCtx, layout: &taffy::Layout,
-        parent_abs_location: taffy::Point<f32>,
+        &self, _ctx: &RenderCtx, _layout: &taffy::Layout,
+        _parent_abs_location: taffy::Point<f32>,
     ) -> anyhow::Result<()> {
         Ok(())
     }

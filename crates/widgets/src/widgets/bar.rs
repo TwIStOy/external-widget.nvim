@@ -57,7 +57,8 @@ impl Widget for Bar {
             },
             ..Default::default()
         };
-        todo!()
+        let id = tree.new_leaf_with_context(style, self.clone())?;
+        Ok(id)
     }
 
     fn render(

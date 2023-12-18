@@ -40,11 +40,14 @@ impl BlockContext {
 }
 
 impl Converter {
-    pub(crate) fn new() -> Self {
-        Self {
+    pub(crate) fn new(props: MarkupProperties) -> Self {
+        let mut ret = Self {
             pending_markup_line: String::new(),
             stack: MarkupSpanStack::new(),
-        }
+        };
+        ret.push_span(MarkupSpan::new_with_properties(props))
+            .unwrap();
+        ret
     }
 
     pub(crate) fn visit_node<'a>(
