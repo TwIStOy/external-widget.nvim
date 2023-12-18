@@ -2,11 +2,14 @@
 //! functionality.
 use std::{env, error::Error, fs};
 
+mod hover;
+
 use async_trait::async_trait;
 
 use external_widget_core::nvim::hl_props_from_group;
 use external_widget_core::pango::MarkupProperties;
-use external_widget_widgets::md2markup;
+use external_widget_core::Widget;
+use external_widget_widgets::MdDoc;
 use rmpv::Value;
 
 use tokio::{io::Stdout, net::TcpListener};
@@ -127,7 +130,8 @@ async fn process_connection(tcp: TcpStream) {
 fn main() -> anyhow::Result<()> {
     external_widget_widgets::taffy_test().unwrap();
     let md = fs::read_to_string("/tmp/test.md")?;
-    md2markup(&md);
+    let md = MdDoc::new(md)?;
+    md.print_element();
 
     Ok(())
 }

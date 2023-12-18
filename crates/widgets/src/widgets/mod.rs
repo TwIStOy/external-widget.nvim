@@ -9,5 +9,5 @@ pub use bar::Bar;
 pub use column::Column;
 pub use container::Container;
 pub use markup::MarkupParagraph;
-pub use md_doc::md2markup;
+pub use md_doc::MdDoc;
 pub use row::Row;

@@ -8,18 +8,6 @@ use taffy::Style;
 
 mod converter;
 
-pub fn md2markup(md: &str) {
-    let arena = Arena::new();
-    let opts = Options {
-        ..Default::default()
-    };
-    let root = parse_document(&arena, md, &opts);
-    let mut converter = converter::Converter::new(MarkupProperties::new());
-    let res = converter.visit_node(root).unwrap();
-
-    res.print_element();
-}
-
 #[derive(Debug, Clone)]
 pub struct MdDoc {
     md: String,
@@ -61,7 +49,7 @@ impl Widget for MdDoc {
 
     fn print_element_impl(&self, lasts: &mut Vec<bool>) {
         print_element_marker(lasts);
-        println!("MdDoc");
+        println!("MdDoc {:?}", self.md);
         lasts.push(true);
         self.root_widget.print_element_impl(lasts);
         lasts.pop();
