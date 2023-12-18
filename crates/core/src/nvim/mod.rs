@@ -1,3 +1,3 @@
 mod hl;
 
-pub use hl::hl_props_from_group;
+pub use hl::{hl_props_from_group, HighlightDefinition};

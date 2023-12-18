@@ -10,6 +10,7 @@ thiserror = { workspace = true }
 pango = { workspace = true }
 cairo-rs = { workspace = true }
 pangocairo = { workspace = true }
+tree-sitter = { workspace = true }
 
 taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "440843c700455363383e0a4fc365a15deebd4717" }
 comrak = "0.20.0"

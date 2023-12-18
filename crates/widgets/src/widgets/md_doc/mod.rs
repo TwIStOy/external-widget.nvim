@@ -1,11 +1,13 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use comrak::{parse_document, Arena, Options};
 use external_widget_core::{
-    pango::MarkupProperties, print_element_marker, Widget,
+    nvim::HighlightDefinition, pango::MarkupProperties, print_element_marker,
+    Widget,
 };
 use taffy::Style;
 
+mod codeblock;
 mod converter;
 
 #[derive(Debug, Clone)]
@@ -15,13 +17,16 @@ pub struct MdDoc {
 }
 
 impl MdDoc {
-    pub fn new(md: String) -> anyhow::Result<Self> {
+    pub fn new(
+        md: String, highlights: HashMap<String, HighlightDefinition>,
+    ) -> anyhow::Result<Self> {
         let arena = Arena::new();
         let opts = Options {
             ..Default::default()
         };
         let root = parse_document(&arena, &md, &opts);
-        let mut converter = converter::Converter::new(MarkupProperties::new());
+        let mut converter =
+            converter::Converter::new(MarkupProperties::new(), highlights);
         let root_widget = converter.visit_node(root)?;
         Ok(Self { md, root_widget })
     }

@@ -1,10 +1,11 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use anyhow::bail;
 use comrak::nodes::{
     AstNode, NodeCode, NodeCodeBlock, NodeHeading, NodeList, NodeValue,
 };
 use external_widget_core::{
+    nvim::HighlightDefinition,
     pango::{MarkupProperties, MarkupSpan, MarkupSpanStack},
     Widget,
 };
@@ -12,9 +13,12 @@ use taffy::LengthPercentage;
 
 use crate::{Bar, Column, MarkupParagraph, Row};
 
+use super::codeblock::{get_all_captures, HighlightMarkerType};
+
 pub(crate) struct Converter {
     pending_markup_line: String,
     stack: MarkupSpanStack,
+    highlights: HashMap<String, HighlightDefinition>,
 }
 
 struct BlockContext {
@@ -40,10 +44,14 @@ impl BlockContext {
 }
 
 impl Converter {
-    pub(crate) fn new(props: MarkupProperties) -> Self {
+    pub(crate) fn new(
+        props: MarkupProperties,
+        highlights: HashMap<String, HighlightDefinition>,
+    ) -> Self {
         let mut ret = Self {
             pending_markup_line: String::new(),
             stack: MarkupSpanStack::new(),
+            highlights,
         };
         ret.push_span(MarkupSpan::new_with_properties(props))
             .unwrap();
@@ -115,10 +123,10 @@ impl Converter {
         block: &mut BlockContext,
     ) -> anyhow::Result<()> {
         let span = MarkupSpan::new_with_properties(props);
-        self.stack.push(span);
+        self.push_span(span)?;
         node.children()
             .try_for_each(|x| self.visit_inline_node(x, block))?;
-        self.stack.pop();
+        self.pop_span()?;
         Ok(())
     }
 
@@ -209,28 +217,76 @@ impl Converter {
     fn visit_code_block(
         &mut self, codeblock: &NodeCodeBlock,
     ) -> anyhow::Result<Arc<dyn Widget>> {
+        let mut block = BlockContext::new();
         let mut props = MarkupProperties::new();
         props.insert("font".into(), "monospace".into());
         let span = MarkupSpan::new_with_properties(props);
-        self.stack.push(span);
-        let lines: Vec<String> = codeblock
-            .literal
-            .split('\n')
-            .map(|x| x.trim_end())
-            .map(|x| {
-                let mut ret = String::new();
-                self.stack.to_markup_open(&mut ret)?;
-                ret.push_str(glib::markup_escape_text(x).as_str());
-                self.stack.to_markup_close(&mut ret);
-                Ok(ret)
-            })
-            .collect::<anyhow::Result<_>>()?;
-        let widgets = lines
-            .into_iter()
-            .map(|x| Arc::new(MarkupParagraph::new(x)) as Arc<dyn Widget>)
-            .collect::<Vec<_>>();
-        self.stack.pop();
-        Ok(Arc::new(Column::new(widgets)))
+        self.push_span(span)?;
+
+        let code = codeblock.literal.trim();
+        let mut highlights = get_all_captures(code, &codeblock.info).unwrap();
+        highlights.sort();
+
+        let mut m = 0usize;
+        let mut offset = 0usize;
+        let chars: Vec<_> = code.chars().collect();
+        let mut balanced: i32 = 0;
+        for i in 0..chars.len() {
+            while m < highlights.len() && highlights[m].offset <= offset {
+                let marker = &highlights[m];
+                // let hl_def = self.highlights.get(&marker.group);
+                match marker.kind {
+                    HighlightMarkerType::Start => {
+                        let hl_def = self.highlights.get(&marker.group);
+                        let props: MarkupProperties =
+                            if let Some(hl_def) = hl_def {
+                                hl_def.clone().into()
+                            } else {
+                                MarkupProperties::new()
+                            };
+                        self.push_span(MarkupSpan::new_with_properties(props))?;
+                    }
+                    HighlightMarkerType::End => {
+                        self.pop_span()?;
+                    }
+                }
+                m += 1;
+            }
+
+            match chars[i] {
+                '\n' | '\r' => {
+                    let line = self.pack_markup_line()?;
+                    block.push_or(line);
+                }
+                _ => {
+                    self.pending_markup_line.push(chars[i]);
+                }
+            }
+
+            offset += chars[i].len_utf8();
+        }
+        while m < highlights.len() {
+            let marker = &highlights[m];
+            // let hl_def = self.highlights.get(&marker.group);
+            match marker.kind {
+                HighlightMarkerType::Start => {
+                    let hl_def = self.highlights.get(&marker.group);
+                    let props: MarkupProperties = if let Some(hl_def) = hl_def {
+                        hl_def.clone().into()
+                    } else {
+                        MarkupProperties::new()
+                    };
+                    self.push_span(MarkupSpan::new_with_properties(props))?;
+                }
+                HighlightMarkerType::End => {
+                    self.pop_span()?;
+                }
+            }
+            m += 1;
+        }
+        self.pop_span()?;
+        block.push_or(self.pack_markup_line()?);
+        Ok(Arc::new(Column::new(block.block_widgets)))
     }
 
     fn visit_heading<'a>(
@@ -263,7 +319,7 @@ impl Converter {
         let mut block = BlockContext::new();
         let marker = match node_list.list_type {
             comrak::nodes::ListType::Bullet => {
-                (node_list.bullet_char as char).to_string()
+                format!("{} ", node_list.bullet_char as char)
             }
             comrak::nodes::ListType::Ordered => {
                 let start = node_list.start;

@@ -1,5 +1,7 @@
 //! A basic example. Mainly for use in a test, but also shows off some basic
 //! functionality.
+use std::collections::HashMap;
+use std::sync::Arc;
 use std::{env, error::Error, fs};
 
 mod hover;
@@ -9,7 +11,7 @@ use async_trait::async_trait;
 use external_widget_core::nvim::hl_props_from_group;
 use external_widget_core::pango::MarkupProperties;
 use external_widget_core::Widget;
-use external_widget_widgets::MdDoc;
+use external_widget_widgets::{render_widget_tree, MdDoc};
 use rmpv::Value;
 
 use tokio::{io::Stdout, net::TcpListener};
@@ -128,10 +130,10 @@ async fn process_connection(tcp: TcpStream) {
 // }
 
 fn main() -> anyhow::Result<()> {
-    external_widget_widgets::taffy_test().unwrap();
+    // external_widget_widgets::taffy_test().unwrap();
     let md = fs::read_to_string("/tmp/test.md")?;
-    let md = MdDoc::new(md)?;
+    let md = MdDoc::new(md, HashMap::new())?;
     md.print_element();
-
+    render_widget_tree(Arc::new(md), 1000, 1000)?;
     Ok(())
 }

@@ -30,8 +30,8 @@ pub struct HighlightDefinition {
     pub link: Option<String>,
 }
 
-impl From<HighlightDefinition> for MarkupProperties {
-    fn from(value: HighlightDefinition) -> Self {
+impl From<&HighlightDefinition> for MarkupProperties {
+    fn from(value: &HighlightDefinition) -> Self {
         let mut ret = Self::new();
         if let Some(v) = value.fg {
             ret.insert("foreground".into(), Color::from_u32(v).to_string());
@@ -88,6 +88,12 @@ impl From<HighlightDefinition> for MarkupProperties {
     }
 }
 
+impl From<HighlightDefinition> for MarkupProperties {
+    fn from(value: HighlightDefinition) -> Self {
+        Self::from(&value)
+    }
+}
+
 async fn hl_props_from_group_impl<W>(
     group: &str, nvim: &Neovim<W>,
 ) -> anyhow::Result<HighlightDefinition>
@@ -114,5 +120,16 @@ where
         } else {
             return Ok(res);
         }
+    }
+}
+
+impl HighlightDefinition {
+    pub async fn new_from_group<W>(
+        group: String, nvim: &Neovim<W>,
+    ) -> anyhow::Result<Self>
+    where
+        W: AsyncWrite + Send + Unpin + 'static,
+    {
+        hl_props_from_group(group, nvim).await
     }
 }
