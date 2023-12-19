@@ -1,21 +1,10 @@
 local Utils = require("external-widget.utils")
 
 local ch_id = nil
----@type vim.SystemObj | nil
-local process = nil
-
-local function start_process()
-	local cmd = Utils.get_package_path()
-	cmd = cmd .. "/target/release/external-widget"
-	local p = vim.system({ cmd }, {}, function()
-		process = nil
-	end)
-	process = p
-end
 
 local function kill_all()
-	if process ~= nil then
-		process:kill(9)
+	if ch_id ~= nil then
+		vim.fn.jobstop(ch_id)
 	end
 end
 
@@ -24,20 +13,21 @@ local function create_client()
 		return
 	end
 
-	local ch = vim.fn.sockconnect("tcp", "127.0.0.1:7000")
-
-	if ch == 0 then
-		-- connect failed
-		start_process()
+	local cmd = Utils.get_package_path()
+	cmd = cmd .. "/target/release/external-widget"
+	local ch = vim.fn.jobstart({ cmd }, {
+		rpc = 1,
+		on_exit = function(_, code)
+			if code ~= 0 then
+				print("external-widget: failed to start server")
+			end
+		end,
+	})
+	if ch > 0 then
+		ch_id = ch
+	else
+		error("Failed to start external-widget process")
 	end
-
-	ch = vim.fn.sockconnect("tcp", "127.0.0.1:7000")
-
-	if ch == 0 then
-		return
-	end
-
-	ch_id = ch
 end
 
 local function get_client()
@@ -47,7 +37,6 @@ local function get_client()
 
 	return ch_id
 end
-
 
 return {
 	get_client = get_client,
