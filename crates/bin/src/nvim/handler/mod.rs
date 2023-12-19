@@ -7,7 +7,7 @@ use rmpv::Value;
 mod hover;
 
 #[derive(Clone)]
-struct NeovimHandler {}
+pub struct NeovimHandler {}
 
 #[async_trait]
 impl Handler for NeovimHandler {
@@ -45,6 +45,8 @@ impl NeovimHandler {
                 hover::build_hover_doc_image(&nvim, md.to_string(), lang)
                     .await
                     .unwrap_or_default();
+            // write file to disk
+            std::fs::write("/tmp/hover.png", image)?;
         }
         Ok(())
     }

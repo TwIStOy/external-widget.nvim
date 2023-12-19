@@ -13,6 +13,7 @@ use external_widget_core::nvim::hl_props_from_group;
 use external_widget_core::pango::MarkupProperties;
 use external_widget_core::{term_get_size, Widget};
 use external_widget_widgets::{render_widget_tree, MdDoc, MdDocOpts};
+use nvim::NeovimHandler;
 use rmpv::Value;
 
 use tokio::{io::Stdout, net::TcpListener};
@@ -25,47 +26,6 @@ use tokio::task::JoinHandle;
 use tokio_util::compat::{
     Compat, TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt,
 };
-
-#[derive(Clone)]
-struct NeovimHandler {}
-
-#[async_trait]
-impl Handler for NeovimHandler {
-    type Writer = Compat<WriteHalf<TcpStream>>;
-
-    async fn handle_request(
-        &self, name: String, _args: Vec<Value>,
-        _neovim: Neovim<Compat<WriteHalf<TcpStream>>>,
-    ) -> Result<Value, Value> {
-        println!("handle_request: {}", name);
-        match name.as_ref() {
-            "ping" => {
-                println!("ping");
-                Ok(Value::from("pong"))
-            }
-            "term" => {
-                let size = term_get_size().unwrap();
-                println!("{:?}", size);
-                let v =
-                    Value::from(vec![Value::from(size.0), Value::from(size.1)]);
-                Ok(v)
-            }
-            _ => unimplemented!(),
-        }
-    }
-
-    async fn handle_notify(
-        &self, name: String, _args: Vec<Value>,
-        nvim: Neovim<<Self as Handler>::Writer>,
-    ) {
-        println!("handle_notify, {}", name);
-        let ret = hl_props_from_group("Normal".to_string(), &nvim)
-            .await
-            .unwrap();
-        let ret: MarkupProperties = ret.into();
-        println!("hl: {:?}", ret);
-    }
-}
 
 fn receive_tcp(
     mut tcp: TcpStream,
