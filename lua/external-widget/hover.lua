@@ -1,14 +1,4 @@
--- function bufHover() {
---   let params = luaRequire("vim.lsp.util").make_position_params();
---   vim.lsp.buf_request(
---     0,
---     "textDocument/hover",
---     params,
---     (_err, res: Hover, _context) => {
---       hoverCallback(res.contents);
---     }
---   );
--- }
+local Rpc = require("external-widget.rpc")
 
 ---@param err any
 ---@param res lsp.Hover
