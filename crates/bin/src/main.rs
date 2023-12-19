@@ -1,9 +1,3 @@
-//! A basic example. Mainly for use in a test, but also shows off some basic
-//! functionality.
-use std::collections::HashMap;
-use std::rc::Rc;
-use std::sync::Arc;
-use std::time::Duration;
 use std::{env, error::Error, fs};
 
 use async_trait::async_trait;
@@ -14,9 +8,7 @@ use external_widget_core::kitty::{display_image, transmit_image, ID};
 use external_widget_core::nvim::hl_props_from_group;
 use external_widget_core::pango::MarkupProperties;
 use external_widget_core::{term_get_size, TermWriter, Widget};
-use external_widget_widgets::{
-    render_widget_tree, render_widget_tree_to_buf, taffy_test, MdDoc, MdDocOpts,
-};
+use external_widget_widgets::{render_widget_tree_to_buf, MdDoc, MdDocOpts};
 use nvim::NeovimHandler;
 use rmpv::Value;
 
