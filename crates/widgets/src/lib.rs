@@ -27,6 +27,8 @@ pub fn render_widget_tree_to_buf(
     let render_ctx = RenderCtx::new(ctx.clone());
     let measure_ctx = MeasureCtx::new(ctx.clone());
 
+    root.print_element();
+
     let mut tree = WidgetTree::new();
     let root = root.register(&mut tree)?;
 
@@ -37,6 +39,7 @@ pub fn render_widget_tree_to_buf(
 
     let mut writer = std::io::BufWriter::new(Vec::new());
     surface.write_to_png(&mut writer)?;
+    writer.flush()?;
 
     Ok(writer.into_inner()?)
 }

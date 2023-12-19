@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 struct Configuration {
     pub normal_font: String,
     pub mono_font: String,
-    pub font_size: u32,
+    pub font_size: String,
 }
 
 impl Configuration {
@@ -19,7 +19,7 @@ impl Default for Configuration {
         Self {
             normal_font: "Sans".to_string(),
             mono_font: "monospace".to_string(),
-            font_size: 16,
+            font_size: "16pt".to_string(),
         }
     }
 }

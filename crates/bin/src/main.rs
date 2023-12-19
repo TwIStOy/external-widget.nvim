@@ -3,19 +3,24 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
+use std::time::Duration;
 use std::{env, error::Error, fs};
 
 use async_trait::async_trait;
 mod config;
 mod nvim;
 
+use external_widget_core::kitty::{display_image, transmit_image, ID};
 use external_widget_core::nvim::hl_props_from_group;
 use external_widget_core::pango::MarkupProperties;
-use external_widget_core::{term_get_size, Widget};
-use external_widget_widgets::{render_widget_tree, MdDoc, MdDocOpts};
+use external_widget_core::{term_get_size, TermWriter, Widget};
+use external_widget_widgets::{
+    render_widget_tree, render_widget_tree_to_buf, taffy_test, MdDoc, MdDocOpts,
+};
 use nvim::NeovimHandler;
 use rmpv::Value;
 
+use tokio::time::sleep;
 use tokio::{io::Stdout, net::TcpListener};
 
 use nvim_rs::error::LoopError;
@@ -97,18 +102,23 @@ async fn main() -> anyhow::Result<()> {
     }
 }
 
-// fn main() -> anyhow::Result<()> {
-//     // external_widget_widgets::taffy_test().unwrap();
-//     let md = fs::read_to_string("/tmp/test.md")?;
+// #[tokio::main]
+// async fn main() -> anyhow::Result<()> {
+//     let md = tokio::fs::read_to_string("/tmp/test.md").await?;
 //     let opts = MdDocOpts {
 //         md,
 //         highlights: HashMap::new(),
-//         normal_font: "Sans".to_string(),
-//         mono_font: "Monolisa".to_string(),
-//         font_size: 16.to_string(),
+//         normal_font: "MonoLisa".to_string(),
+//         mono_font: "MonoLisa".to_string(),
+//         font_size: "14pt".to_string(),
 //     };
-//     let md = MdDoc::new(opts)?;
-//     md.print_element();
-//     render_widget_tree(Rc::new(md), 1000, 1000)?;
+//     let widget = Rc::new(MdDoc::new(opts)?);
+//     let image = render_widget_tree_to_buf(widget, 1000, 1000)?;
+//     tokio::fs::write("/tmp/test.png", &image).await?;
+//     let mut writer = TermWriter::new_tmux_tty("/dev/pts/9", true).await?;
+//     let id = ID(10.try_into().unwrap());
+//     transmit_image(&image, &mut writer, id).await?;
+//     sleep(Duration::from_millis(100)).await;
+//     display_image(&mut writer, id).await?;
 //     Ok(())
 // }

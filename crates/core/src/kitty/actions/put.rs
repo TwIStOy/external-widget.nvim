@@ -32,6 +32,8 @@ pub struct ActionPut {
     pub unicode_placeholder: bool,
     /// The z-index vertical staking order of the image
     pub z_index: u32,
+    /// The placement id
+    pub placement: Placement,
     /// The ID of a parent image for relative placement
     pub parent_image: Option<ID>,
     /// The id of a placement in the parent image for relative placement
@@ -90,6 +92,9 @@ impl Display for ActionPut {
         }
         if self.cell_relative_offset_vertical != 0 {
             write!(f, "V={},", self.cell_relative_offset_vertical)?;
+        }
+        if let Some(placement) = self.placement.0 {
+            write!(f, "p={placement},")?;
         }
 
         Ok(())

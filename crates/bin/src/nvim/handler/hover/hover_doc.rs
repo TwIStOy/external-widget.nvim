@@ -6,6 +6,8 @@ use external_widget_core::{
 };
 use external_widget_widgets::{render_widget_tree_to_buf, MdDoc, MdDocOpts};
 
+const BUILTIN_GROUPS: [&str; 1] = ["Normal"];
+
 async fn prepare_highlights(
     lang: &str, nvim: &Nvim,
 ) -> anyhow::Result<HashMap<String, HighlightDefinition>> {
@@ -24,6 +26,7 @@ async fn prepare_highlights(
             .unwrap_or_default();
         highlights.extend(lang_hl.into_iter());
     }
+    highlights.extend(BUILTIN_GROUPS.iter().map(|x| x.to_string()));
 
     let mut ret = HashMap::new();
 
@@ -43,9 +46,9 @@ pub async fn build_hover_doc_image(
     let opts = MdDocOpts {
         md,
         highlights,
-        normal_font: "Sans".to_string(),
-        mono_font: "Monolisa".to_string(),
-        font_size: 16.to_string(),
+        normal_font: "MonoLisa".to_string(),
+        mono_font: "MonoLisa".to_string(),
+        font_size: "14pt".to_string(),
     };
     let widget = Rc::new(MdDoc::new(opts)?);
     let buffer = render_widget_tree_to_buf(widget, 1000, 1000)?;

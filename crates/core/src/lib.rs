@@ -1,7 +1,7 @@
 mod color;
 mod env;
 mod graphics;
-mod kitty;
+pub mod kitty;
 pub mod nvim;
 pub mod pango;
 mod term;

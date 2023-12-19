@@ -4,7 +4,7 @@ use tokio::{
     io::{AsyncWriteExt, BufWriter},
 };
 
-use crate::{get_tty, in_tmux, tmux_escape_write, tmux_pane_tty};
+use crate::{get_tty, in_tmux, readable_buf, tmux_escape_write, tmux_pane_tty};
 
 pub async fn write_to_tty(data: &str) -> anyhow::Result<()> {
     let tty = if in_tmux() {
@@ -52,6 +52,17 @@ impl TermWriter {
         })
     }
 
+    pub async fn new_tmux_tty(tty: &str, tmux: bool) -> anyhow::Result<Self> {
+        let writer =
+            tokio::fs::OpenOptions::new().write(true).open(tty).await?;
+        let writer = BufWriter::new(writer);
+
+        Ok(Self {
+            inner: writer,
+            tmux,
+        })
+    }
+
     pub async fn write_all(
         &mut self, buf: &[u8], escape: bool,
     ) -> anyhow::Result<()> {
@@ -61,6 +72,11 @@ impl TermWriter {
             self.inner.write_all(buf).await?;
             Ok(())
         }
+    }
+
+    pub async fn flush(&mut self) -> anyhow::Result<()> {
+        self.inner.flush().await?;
+        Ok(())
     }
 }
 
