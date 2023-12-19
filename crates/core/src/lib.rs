@@ -7,6 +7,7 @@ pub mod pango;
 mod term;
 mod tmux;
 pub mod treesitter;
+mod image;
 
 pub use color::Color;
 pub use env::*;

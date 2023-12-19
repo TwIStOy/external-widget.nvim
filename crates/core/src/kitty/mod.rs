@@ -77,7 +77,7 @@ pub async fn transmit_image(
     };
     let cmd = Command {
         action: Action::Transmit(action),
-        quietness: Quietness::SupressOk,
+        quietness: Quietness::SuppressAll,
         id: Some(id),
     };
     cmd.send(Some(data), w).await
@@ -104,7 +104,7 @@ pub async fn display_image(w: &mut TermWriter, id: ID) -> anyhow::Result<()> {
     };
     let cmd = Command {
         action: Action::Put(action),
-        quietness: Quietness::None,
+        quietness: Quietness::SuppressAll,
         id: Some(id),
     };
     cmd.send(None, w).await
