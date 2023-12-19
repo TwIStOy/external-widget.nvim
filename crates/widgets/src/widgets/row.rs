@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{rc::Rc, sync::Arc};
 
 use external_widget_core::{
     print_element_marker, MeasureCtx, RenderCtx, Widget, WidgetTree,
@@ -7,11 +7,11 @@ use taffy::Style;
 
 #[derive(Debug)]
 pub struct Row {
-    children: Vec<Arc<dyn Widget>>,
+    children: Vec<Rc<dyn Widget>>,
 }
 
 impl Row {
-    pub fn new(children: Vec<Arc<dyn Widget>>) -> Self {
+    pub fn new(children: Vec<Rc<dyn Widget>>) -> Self {
         Self { children }
     }
 }
@@ -32,7 +32,7 @@ impl Widget for Row {
     }
 
     fn register(
-        self: Arc<Self>, tree: &mut WidgetTree,
+        self: Rc<Self>, tree: &mut WidgetTree,
     ) -> anyhow::Result<taffy::prelude::NodeId> {
         let mut children = vec![];
         for child in &self.children {

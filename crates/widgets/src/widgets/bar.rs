@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{rc::Rc, sync::Arc};
 
 use external_widget_core::{
     print_element_marker, Color, RenderCtx, Widget, WidgetTree,
@@ -45,7 +45,7 @@ impl Default for Bar {
 
 impl Widget for Bar {
     fn register(
-        self: Arc<Self>, tree: &mut WidgetTree,
+        self: Rc<Self>, tree: &mut WidgetTree,
     ) -> anyhow::Result<NodeId> {
         let style = Style {
             size: Size {

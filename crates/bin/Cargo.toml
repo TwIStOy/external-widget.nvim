@@ -17,5 +17,5 @@ tokio = { workspace = true }
 tokio-util = { workspace = true }
 rmpv = { workspace = true }
 anyhow = { workspace = true }
-headless_chrome = { version = "1.0.8", features = ["fetch"] }
-comrak = "0.20.0"
+futures = { workspace = true }
+serde = { workspace = true }

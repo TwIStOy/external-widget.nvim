@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use super::{MeasureCtx, RenderCtx, Widget};
 use anyhow::{bail, Context};
@@ -6,7 +6,7 @@ use taffy::{AvailableSpace, NodeId, Point, TaffyTree, TraversePartialTree};
 
 pub struct WidgetTree {
     root: Option<NodeId>,
-    tree: TaffyTree<Arc<dyn Widget>>,
+    tree: TaffyTree<Rc<dyn Widget>>,
 }
 
 impl WidgetTree {
@@ -41,7 +41,7 @@ impl WidgetTree {
     }
 
     pub fn new_leaf_with_context(
-        &mut self, style: taffy::Style, widget: Arc<dyn Widget>,
+        &mut self, style: taffy::Style, widget: Rc<dyn Widget>,
     ) -> anyhow::Result<NodeId> {
         let node = self.tree.new_leaf_with_context(style, widget)?;
         Ok(node)

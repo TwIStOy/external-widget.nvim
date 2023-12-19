@@ -1,17 +1,18 @@
 //! A basic example. Mainly for use in a test, but also shows off some basic
 //! functionality.
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::sync::Arc;
 use std::{env, error::Error, fs};
 
-mod hover;
-
 use async_trait::async_trait;
+mod config;
+mod nvim;
 
 use external_widget_core::nvim::hl_props_from_group;
 use external_widget_core::pango::MarkupProperties;
 use external_widget_core::Widget;
-use external_widget_widgets::{render_widget_tree, MdDoc};
+use external_widget_widgets::{render_widget_tree, MdDoc, MdDocOpts};
 use rmpv::Value;
 
 use tokio::{io::Stdout, net::TcpListener};
@@ -132,8 +133,15 @@ async fn process_connection(tcp: TcpStream) {
 fn main() -> anyhow::Result<()> {
     // external_widget_widgets::taffy_test().unwrap();
     let md = fs::read_to_string("/tmp/test.md")?;
-    let md = MdDoc::new(md, HashMap::new())?;
+    let opts = MdDocOpts {
+        md,
+        highlights: HashMap::new(),
+        normal_font: "Sans".to_string(),
+        mono_font: "Monolisa".to_string(),
+        font_size: 16.to_string(),
+    };
+    let md = MdDoc::new(opts)?;
     md.print_element();
-    render_widget_tree(Arc::new(md), 1000, 1000)?;
+    render_widget_tree(Rc::new(md), 1000, 1000)?;
     Ok(())
 }

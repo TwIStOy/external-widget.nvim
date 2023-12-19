@@ -1,4 +1,4 @@
-use std::{fmt::Display, sync::Arc};
+use std::{fmt::Display, rc::Rc, sync::Arc};
 
 use external_widget_core::{
     print_element_marker, MeasureCtx, RenderCtx, Widget, WidgetTree,
@@ -24,7 +24,7 @@ impl Display for MarkupParagraph {
 
 impl Widget for MarkupParagraph {
     fn register(
-        self: Arc<Self>, tree: &mut WidgetTree,
+        self: Rc<Self>, tree: &mut WidgetTree,
     ) -> anyhow::Result<NodeId> {
         tree.new_leaf_with_context(Style::default(), self)
     }

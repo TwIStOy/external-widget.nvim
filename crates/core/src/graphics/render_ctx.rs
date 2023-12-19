@@ -1,13 +1,13 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use crate::Color;
 
 pub struct RenderCtx {
-    ctx: Arc<cairo::Context>,
+    ctx: Rc<cairo::Context>,
 }
 
 impl RenderCtx {
-    pub fn new(ctx: Arc<cairo::Context>) -> Self {
+    pub fn new(ctx: Rc<cairo::Context>) -> Self {
         Self { ctx }
     }
 

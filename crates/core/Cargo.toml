@@ -16,8 +16,8 @@ pangocairo = { workspace = true }
 taffy = { workspace = true }
 tree-sitter = { workspace = true }
 libloading = { workspace = true }
+serde = { workspace = true }
 
-serde = { version = "1.0.193", features = ["derive"] }
 rmp-serde = "1.1.2"
 futures = "0.3.29"
 base64 = { version = "0.21.5" }

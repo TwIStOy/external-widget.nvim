@@ -1,11 +1,11 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 pub struct MeasureCtx {
-    ctx: Arc<cairo::Context>,
+    ctx: Rc<cairo::Context>,
 }
 
 impl MeasureCtx {
-    pub fn new(ctx: Arc<cairo::Context>) -> Self {
+    pub fn new(ctx: Rc<cairo::Context>) -> Self {
         Self { ctx }
     }
 

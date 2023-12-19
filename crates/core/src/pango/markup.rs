@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fmt::Write;
 
 #[derive(Debug, Clone)]
-pub struct MarkupProperties(HashMap<String, String>);
+pub struct MarkupProperties(pub HashMap<String, String>);
 
 #[derive(Debug, Clone)]
 pub struct MarkupSpan {

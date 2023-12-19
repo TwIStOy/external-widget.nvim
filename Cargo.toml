@@ -20,3 +20,5 @@ pangocairo = "0.18.0"
 taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "440843c700455363383e0a4fc365a15deebd4717" }
 tree-sitter = "0.20.10"
 libloading = "0.8.1"
+futures = "0.3.29"
+serde = { version = "1.0.193", features = ["derive"] }

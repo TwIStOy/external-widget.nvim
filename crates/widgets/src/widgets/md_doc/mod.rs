@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, rc::Rc};
 
 use comrak::{parse_document, Arena, Options};
 use external_widget_core::{
@@ -12,29 +12,35 @@ mod converter;
 
 #[derive(Debug, Clone)]
 pub struct MdDoc {
-    md: String,
-    root_widget: Arc<dyn Widget>,
+    root_widget: Rc<dyn Widget>,
+    opts: MdDocOpts,
+}
+
+#[derive(Debug, Clone)]
+pub struct MdDocOpts {
+    pub md: String,
+    pub highlights: HashMap<String, HighlightDefinition>,
+    pub normal_font: String,
+    pub mono_font: String,
+    pub font_size: String,
 }
 
 impl MdDoc {
-    pub fn new(
-        md: String, highlights: HashMap<String, HighlightDefinition>,
-    ) -> anyhow::Result<Self> {
+    pub fn new(opts: MdDocOpts) -> anyhow::Result<Self> {
         let arena = Arena::new();
-        let opts = Options {
+        let parse_opts = Options {
             ..Default::default()
         };
-        let root = parse_document(&arena, &md, &opts);
-        let mut converter =
-            converter::Converter::new(MarkupProperties::new(), highlights);
+        let root = parse_document(&arena, &opts.md, &parse_opts);
+        let mut converter = converter::Converter::new(&opts);
         let root_widget = converter.visit_node(root)?;
-        Ok(Self { md, root_widget })
+        Ok(Self { opts, root_widget })
     }
 }
 
 impl Widget for MdDoc {
     fn register(
-        self: std::sync::Arc<Self>, tree: &mut external_widget_core::WidgetTree,
+        self: Rc<Self>, tree: &mut external_widget_core::WidgetTree,
     ) -> anyhow::Result<taffy::prelude::NodeId> {
         let style = Style {
             ..Default::default()
@@ -54,7 +60,7 @@ impl Widget for MdDoc {
 
     fn print_element_impl(&self, lasts: &mut Vec<bool>) {
         print_element_marker(lasts);
-        println!("MdDoc {:?}", self.md);
+        println!("MdDoc {:?}", self.opts.md);
         lasts.push(true);
         self.root_widget.print_element_impl(lasts);
         lasts.pop();

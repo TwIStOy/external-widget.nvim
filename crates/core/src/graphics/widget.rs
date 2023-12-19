@@ -1,4 +1,4 @@
-use std::{fmt::Debug, sync::Arc};
+use std::{fmt::Debug, rc::Rc};
 
 use taffy::{prelude::*, Point};
 
@@ -15,7 +15,7 @@ pub trait Widget: Debug {
 
     /// Resiger the widget into the tree.
     fn register(
-        self: Arc<Self>, tree: &mut WidgetTree,
+        self: Rc<Self>, tree: &mut WidgetTree,
     ) -> anyhow::Result<NodeId>;
 
     /// Render the widget.

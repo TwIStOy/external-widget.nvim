@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{rc::Rc, sync::Arc};
 
 use external_widget_core::{
     print_element_marker, Color, MeasureCtx, RenderCtx, Widget, WidgetTree,
@@ -15,7 +15,7 @@ pub struct ContainerBorderStyle {
 
 #[derive(Debug)]
 pub struct Container {
-    pub child: Option<Arc<dyn Widget>>,
+    pub child: Option<Rc<dyn Widget>>,
     pub constraints: BoxConstraints,
     pub background: Option<Color>,
     pub border: Option<ContainerBorderStyle>,
@@ -23,7 +23,7 @@ pub struct Container {
 }
 
 impl Container {
-    pub fn new(child: Arc<dyn Widget>) -> Self {
+    pub fn new(child: Rc<dyn Widget>) -> Self {
         Self {
             child: Some(child),
             background: None,
@@ -47,7 +47,7 @@ impl Widget for Container {
     }
 
     fn register(
-        self: std::sync::Arc<Self>, tree: &mut WidgetTree,
+        self: Rc<Self>, tree: &mut WidgetTree,
     ) -> anyhow::Result<NodeId> {
         let style = Style {
             min_size: Size {
