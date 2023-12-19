@@ -11,7 +11,7 @@ mod nvim;
 
 use external_widget_core::nvim::hl_props_from_group;
 use external_widget_core::pango::MarkupProperties;
-use external_widget_core::Widget;
+use external_widget_core::{term_get_size, Widget};
 use external_widget_widgets::{render_widget_tree, MdDoc, MdDocOpts};
 use rmpv::Value;
 
@@ -42,6 +42,13 @@ impl Handler for NeovimHandler {
             "ping" => {
                 println!("ping");
                 Ok(Value::from("pong"))
+            }
+            "term" => {
+                let size = term_get_size().unwrap();
+                println!("{:?}", size);
+                let v =
+                    Value::from(vec![Value::from(size.0), Value::from(size.1)]);
+                Ok(v)
             }
             _ => unimplemented!(),
         }
@@ -117,31 +124,31 @@ async fn process_connection(tcp: TcpStream) {
     }
 }
 
-// #[tokio::main]
-// async fn main() {
-//     let listener = TcpListener::bind("127.0.0.1:7000").await.unwrap();
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let listener = TcpListener::bind("127.0.0.1:7000").await.unwrap();
 
-//     loop {
-//         let (tcp, addr) = listener.accept().await.unwrap();
-//         println!("Accepted connection, {:?}, {:?}", tcp, addr);
-//         tokio::spawn(async move {
-//             process_connection(tcp).await;
-//         });
-//     }
-// }
-
-fn main() -> anyhow::Result<()> {
-    // external_widget_widgets::taffy_test().unwrap();
-    let md = fs::read_to_string("/tmp/test.md")?;
-    let opts = MdDocOpts {
-        md,
-        highlights: HashMap::new(),
-        normal_font: "Sans".to_string(),
-        mono_font: "Monolisa".to_string(),
-        font_size: 16.to_string(),
-    };
-    let md = MdDoc::new(opts)?;
-    md.print_element();
-    render_widget_tree(Rc::new(md), 1000, 1000)?;
-    Ok(())
+    loop {
+        let (tcp, addr) = listener.accept().await.unwrap();
+        println!("Accepted connection, {:?}, {:?}", tcp, addr);
+        tokio::spawn(async move {
+            process_connection(tcp).await;
+        });
+    }
 }
+
+// fn main() -> anyhow::Result<()> {
+//     // external_widget_widgets::taffy_test().unwrap();
+//     let md = fs::read_to_string("/tmp/test.md")?;
+//     let opts = MdDocOpts {
+//         md,
+//         highlights: HashMap::new(),
+//         normal_font: "Sans".to_string(),
+//         mono_font: "Monolisa".to_string(),
+//         font_size: 16.to_string(),
+//     };
+//     let md = MdDoc::new(opts)?;
+//     md.print_element();
+//     render_widget_tree(Rc::new(md), 1000, 1000)?;
+//     Ok(())
+// }

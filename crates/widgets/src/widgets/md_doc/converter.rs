@@ -58,6 +58,10 @@ impl<'c> Converter<'c> {
         let mut props = MarkupProperties::new();
         props.insert("font".into(), opts.normal_font.clone());
         props.insert("size".into(), opts.font_size.to_string());
+        if let Some(hl) = opts.highlights.get("Normal") {
+            let p: MarkupProperties = hl.into();
+            props.0.extend(p.0);
+        }
         ret.push_span(MarkupSpan::new_with_properties(props))
             .unwrap();
         ret

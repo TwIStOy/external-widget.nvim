@@ -1,3 +1,4 @@
+use anyhow::Context;
 use tokio::{
     fs::File,
     io::{AsyncWrite, AsyncWriteExt, BufWriter},
@@ -62,3 +63,45 @@ impl TermWriter {
         }
     }
 }
+
+pub fn term_get_size() -> anyhow::Result<(usize, usize)> {
+    term_size::dimensions().context("Cannot get terminal size")
+}
+
+// function updateSize() {
+//     let ffi = require("ffi") as AnyMod;
+
+//     ffi.cdef(`
+//       typedef struct {
+//         unsigned short row;
+//         unsigned short col;
+//         unsigned short xpixel;
+//         unsigned short ypixel;
+//       } winsize;
+//       int ioctl(int, int, ...);
+//     `);
+
+//     let TIOCGWINSZ = null;
+//     if (vim.fn.has("linux") == 1) {
+//       TIOCGWINSZ = 0x5413;
+//     } else if (vim.fn.has("mac") == 1) {
+//       TIOCGWINSZ = 0x40087468;
+//     } else if (vim.fn.has("bsd") == 1) {
+//       TIOCGWINSZ = 0x40087468;
+//     }
+//     let sz: {
+//       row: number;
+//       col: number;
+//       xpixel: number;
+//       ypixel: number;
+//     } = ffi.new("winsize");
+//     assert(ffi.C.ioctl(1, TIOCGWINSZ, sz) == 0, "Failed to get terminal size");
+//     _cached_size = {
+//       screen_x: sz.xpixel,
+//       screen_y: sz.ypixel,
+//       screen_cols: sz.col,
+//       screen_rows: sz.row,
+//       cell_width: sz.xpixel / sz.col,
+//       cell_height: sz.ypixel / sz.row,
+//     };
+//   }

@@ -11,4 +11,5 @@ pub mod treesitter;
 pub use color::Color;
 pub use env::*;
 pub use graphics::*;
+pub use term::*;
 pub use tmux::*;

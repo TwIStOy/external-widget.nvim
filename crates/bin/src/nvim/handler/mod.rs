@@ -1,3 +1,4 @@
+use anyhow::bail;
 use async_trait::async_trait;
 use external_widget_core::nvim::{Nvim, NvimWriter};
 use nvim_rs::Handler;
@@ -25,9 +26,26 @@ impl Handler for NeovimHandler {
         }
     }
 
-    async fn handle_notify(&self, name: String, _args: Vec<Value>, nvim: Nvim) {
+    async fn handle_notify(&self, name: String, args: Vec<Value>, nvim: Nvim) {
+        let _ = self.handle_notify_impl(name, args, nvim).await;
+    }
+}
+
+impl NeovimHandler {
+    async fn handle_notify_impl(
+        &self, name: String, args: Vec<Value>, nvim: Nvim,
+    ) -> anyhow::Result<()> {
         if name == "hover" {
-            // process hover
+            if args.len() != 2 {
+                bail!("hover expects 2 arguments");
+            }
+            let md = args[0].as_str().unwrap_or_default();
+            let lang = args[1].as_str().unwrap_or_default();
+            let image =
+                hover::build_hover_doc_image(&nvim, md.to_string(), lang)
+                    .await
+                    .unwrap_or_default();
         }
+        Ok(())
     }
 }

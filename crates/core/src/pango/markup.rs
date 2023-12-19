@@ -31,7 +31,7 @@ impl MarkupProperties {
     pub fn to_markup(&self, res: &mut String) -> anyhow::Result<()> {
         self.0
             .iter()
-            .try_for_each(|(k, v)| write!(res, "{}=\"{}\"", k, v))
+            .try_for_each(|(k, v)| write!(res, " {}=\"{}\"", k, v))
             .context("Failed to write markup")
     }
 
@@ -68,7 +68,7 @@ impl MarkupSpan {
     ///
     /// @param res the string to append to
     pub fn to_markup_open(&self, res: &mut String) -> anyhow::Result<()> {
-        res.push_str("<span ");
+        res.push_str("<span");
         self.properties.to_markup(res)?;
         res.push('>');
         Ok(())
