@@ -26,13 +26,14 @@ impl Image {
         Self { id, buffer }
     }
 
-    pub async fn transmit(&self, w: &mut TermWriter) -> anyhow::Result<()> {
-        transmit_image(&self.buffer, w, ID(self.id)).await
+    pub async fn transmit(&self) -> anyhow::Result<()> {
+        let mut writer = TermWriter::new().await?;
+        transmit_image(&self.buffer, &mut writer, ID(self.id)).await?;
+        writer.flush().await
     }
 
-    pub async fn render_at(
-        &self, w: &mut TermWriter, x: u32, y: u32,
-    ) -> anyhow::Result<()> {
+    pub async fn render_at(&self, x: u32, y: u32) -> anyhow::Result<()> {
+        let mut writer = TermWriter::new().await?;
         let action = ActionPut {
             x_offset: x,
             y_offset: y,
@@ -45,10 +46,13 @@ impl Image {
             quietness: Quietness::None,
             id: Some(ID(self.id)),
         };
-        cmd.send(None, w).await
+        cmd.send(None, &mut writer).await?;
+        writer.flush().await
     }
 
-    pub async fn delete_image(&self, w: &mut TermWriter) -> anyhow::Result<()> {
-        delete_image(w, ID(self.id)).await
+    pub async fn delete_image(&self) -> anyhow::Result<()> {
+        let mut writer = TermWriter::new().await?;
+        delete_image(&mut writer, ID(self.id)).await?;
+        writer.flush().await
     }
 }

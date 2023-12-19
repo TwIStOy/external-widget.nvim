@@ -1,7 +1,9 @@
 mod hover_doc;
 
 use anyhow::bail;
-use external_widget_core::{nvim::Nvim, TermWriter, kitty::transmit_image};
+use external_widget_core::{
+    kitty::transmit_image, nvim::Nvim, Image, TermWriter,
+};
 pub use hover_doc::build_hover_doc_image;
 use rmpv::Value;
 
@@ -15,10 +17,6 @@ pub async fn handle_hover_notify(
     let lang = args[1].as_str().unwrap_or_default();
     println!("md: {}, lang: {}", md, lang);
     let image = build_hover_doc_image(&nvim, md.to_string(), lang).await?;
-    let mut writer = TermWriter::new().await?;
-    let id = ID(10.try_into().unwrap());
-    transmit_image(&image, &mut writer, id).await?;
-    sleep(Duration::from_millis(1000)).await;
-    display_image(&mut writer, id).await?;
+    let image = Image::from_buffer(image);
     Ok(())
 }
