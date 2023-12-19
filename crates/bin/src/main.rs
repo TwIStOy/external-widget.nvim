@@ -5,7 +5,7 @@ mod config;
 mod nvim;
 
 use external_widget_core::kitty::{display_image, transmit_image, ID};
-use external_widget_core::nvim::hl_props_from_group;
+use external_widget_core::nvim::{hl_props_from_group, Nvim, NvimWriter};
 use external_widget_core::pango::MarkupProperties;
 use external_widget_core::{term_get_size, TermWriter, Widget};
 use external_widget_widgets::{render_widget_tree_to_buf, MdDoc, MdDocOpts};
@@ -26,15 +26,12 @@ use tokio_util::compat::{
 
 fn receive_tcp(
     mut tcp: TcpStream,
-) -> std::io::Result<(
-    Neovim<Compat<WriteHalf<TcpStream>>>,
-    JoinHandle<Result<(), Box<LoopError>>>,
-)> {
+) -> std::io::Result<(Nvim, JoinHandle<Result<(), Box<LoopError>>>)> {
     let handler: NeovimHandler = NeovimHandler {};
     let (reader, writer) = split(tcp);
-    let (neovim, io) = Neovim::<Compat<WriteHalf<TcpStream>>>::new(
+    let (neovim, io) = Neovim::<NvimWriter>::new(
         reader.compat(),
-        writer.compat_write(),
+        Box::new(writer.compat_write()),
         handler,
     );
     let io_handle = tokio::spawn(io);

@@ -527,6 +527,7 @@ dependencies = [
  "once_cell",
  "pango",
  "pangocairo",
+ "parking_lot",
  "regex",
  "rmp-serde",
  "rmpv",

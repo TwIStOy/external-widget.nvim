@@ -1,13 +1,13 @@
-use std::{num::NonZeroU32, time::Duration};
+use std::time::Duration;
 
 use anyhow::bail;
 use async_trait::async_trait;
 use external_widget_core::{
-    kitty::{delete_image, display_image, transmit_image, ID},
+    kitty::{display_image, transmit_image, ID},
     nvim::{Nvim, NvimWriter},
     TermWriter,
 };
-use nvim_rs::Handler;
+use nvim_rs::{Handler, Neovim};
 use rmpv::Value;
 use tokio::time::sleep;
 
@@ -21,7 +21,7 @@ impl Handler for NeovimHandler {
     type Writer = NvimWriter;
 
     async fn handle_request(
-        &self, name: String, _args: Vec<Value>, _neovim: Nvim,
+        &self, name: String, _args: Vec<Value>, _neovim: Neovim<Self::Writer>,
     ) -> Result<Value, Value> {
         println!("handle_request: {}", name);
         match name.as_ref() {
@@ -33,7 +33,9 @@ impl Handler for NeovimHandler {
         }
     }
 
-    async fn handle_notify(&self, name: String, args: Vec<Value>, nvim: Nvim) {
+    async fn handle_notify(
+        &self, name: String, args: Vec<Value>, nvim: Neovim<Self::Writer>,
+    ) {
         println!("handle notify: {}, args: {:?}", name, args);
         let r = self.handle_notify_impl(name, args, nvim).await;
         if let Err(err) = r {
@@ -56,11 +58,10 @@ impl NeovimHandler {
             let image =
                 hover::build_hover_doc_image(&nvim, md.to_string(), lang)
                     .await?;
-            tokio::fs::write("/tmp/test.png", &image).await?;
             let mut writer = TermWriter::new().await?;
             let id = ID(10.try_into().unwrap());
             transmit_image(&image, &mut writer, id).await?;
-            sleep(Duration::from_millis(1000)).await;
+            sleep(Duration::from_millis(10)).await;
             display_image(&mut writer, id).await?;
         }
         Ok(())
