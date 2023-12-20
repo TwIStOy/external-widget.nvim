@@ -1,4 +1,4 @@
-use std::{rc::Rc, sync::Arc};
+use std::rc::Rc;
 
 use external_widget_core::{
     print_element_marker, Color, RenderCtx, Widget, WidgetTree,
