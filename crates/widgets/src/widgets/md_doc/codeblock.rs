@@ -1,17 +1,6 @@
 use anyhow::Context;
 use external_widget_core::treesitter::TREE_SITTER;
-use tree_sitter::{QueryCursor, TextProvider};
-
-pub struct MdClodeBlock {
-    code: String,
-    lang: String,
-}
-
-impl MdClodeBlock {
-    pub fn new(code: String, lang: String) -> Self {
-        Self { code, lang }
-    }
-}
+use tree_sitter::QueryCursor;
 
 #[derive(Debug, Eq, PartialEq)]
 pub(super) enum HighlightMarkerType {

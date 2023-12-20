@@ -21,7 +21,14 @@ local function hover_callback(err, res)
 	vim.api.nvim_exec_autocmds("User", {
 		pattern = "ShowHover",
 	})
-	local image_id = vim.rpcrequest(client, "start_hover", value, contents.kind)
+	local image_id = vim.rpcrequest(
+		client,
+		"start_hover",
+		value,
+		vim.api.nvim_get_option_value("filetype", {
+			buf = 0,
+		})
+	)
 	vim.api.nvim_create_autocmd({
 		"CursorMoved",
 		"FocusLost",

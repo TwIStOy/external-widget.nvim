@@ -9,9 +9,11 @@ use external_widget_widgets::{
     render_widget_tree_to_buf, Container, ContainerBorderStyle, MdDoc,
     MdDocOpts,
 };
+use tracing::info;
 
 const BUILTIN_GROUPS: [&str; 3] = ["Normal", "NormalNC", "NormalFloat"];
 
+#[tracing::instrument(skip(nvim))]
 async fn prepare_highlights(
     lang: &str, nvim: &Nvim,
 ) -> anyhow::Result<HashMap<String, HighlightDefinition>> {
@@ -32,6 +34,8 @@ async fn prepare_highlights(
     }
     highlights.extend(BUILTIN_GROUPS.iter().map(|x| x.to_string()));
 
+    info!("highlights: {:?}", highlights);
+
     let mut ret = HashMap::new();
 
     for name in highlights {
@@ -43,6 +47,7 @@ async fn prepare_highlights(
     Ok(ret)
 }
 
+#[tracing::instrument(skip(nvim, md))]
 pub async fn build_hover_doc_image(
     nvim: &Nvim, md: String, lang: &str,
 ) -> anyhow::Result<Vec<u8>> {
