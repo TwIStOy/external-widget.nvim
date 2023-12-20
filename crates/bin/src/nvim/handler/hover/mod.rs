@@ -41,7 +41,7 @@ pub(super) trait HoverHandler {
                     let image = IMAGE_MANAGER
                         .lock()
                         .new_image_from_id_buffer(id, image);
-                    image.render_at(0, 0).await.unwrap();
+                    image.render_at(5, 5).await.unwrap();
                 }
                 Err(err) => {
                     warn!("Error building hover doc image: {}", err);

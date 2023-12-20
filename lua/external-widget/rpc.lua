@@ -5,7 +5,8 @@ local ch_id = nil
 
 local function kill_all()
 	if ch_id ~= nil then
-		vim.fn.jobstop(ch_id)
+		-- vim.fn.jobstop(ch_id)
+		vim.fn.chanclose(ch_id)
 	end
 end
 
@@ -41,6 +42,12 @@ local function get_client()
 
 	return ch_id
 end
+
+vim.api.nvim_create_autocmd("VimLeavePre", {
+	callback = function()
+		kill_all()
+	end,
+})
 
 return {
 	get_client = get_client,
