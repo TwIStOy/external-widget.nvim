@@ -14,15 +14,18 @@ local function create_client()
 		return
 	end
 
-	local cmd = Utils.get_package_path()
-	cmd = cmd .. "/target/release/external-widget"
-	local ch = vim.fn.jobstart({ cmd }, {
+	-- local cmd = Utils.get_package_path()
+	-- cmd = cmd .. "/target/release/external-widget"
+	-- local ch = vim.fn.jobstart({ cmd }, {
+	-- 	rpc = 1,
+	-- 	on_exit = function(_, code)
+	-- 		if code ~= 0 then
+	-- 			print("external-widget: failed to start server")
+	-- 		end
+	-- 	end,
+	-- })
+	local ch = vim.fn.sockconnect("tcp", "127.0.0.1:7000", {
 		rpc = 1,
-		on_exit = function(_, code)
-			if code ~= 0 then
-				print("external-widget: failed to start server")
-			end
-		end,
 	})
 	if ch > 0 then
 		ch_id = ch

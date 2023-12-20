@@ -2,7 +2,7 @@ mod handler;
 
 use external_widget_core::nvim::NvimWriter;
 pub use handler::NeovimHandler;
-use nvim_rs::{create, Neovim};
+use nvim_rs::Neovim;
 use tokio::{
     io::{split, stdin, stdout},
     net::{TcpListener, TcpStream},
@@ -27,7 +27,7 @@ pub(crate) async fn start_server(addr: &str) -> anyhow::Result<()> {
 
 pub(crate) async fn start_parent() -> anyhow::Result<()> {
     let handler = NeovimHandler {};
-    let (neovim, io) = Neovim::<NvimWriter>::new(
+    let (_neovim, io) = Neovim::<NvimWriter>::new(
         stdin().compat(),
         Box::new(stdout().compat_write()),
         handler,

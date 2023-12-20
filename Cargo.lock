@@ -510,6 +510,7 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tracing",
+ "tracing-log",
  "tracing-subscriber",
 ]
 
@@ -536,6 +537,7 @@ dependencies = [
  "term_size",
  "tokio",
  "tokio-util",
+ "tracing",
  "tree-sitter",
 ]
 

@@ -3,6 +3,7 @@ use tokio::{
     fs::File,
     io::{AsyncWriteExt, BufWriter},
 };
+use tracing::info;
 
 use crate::{get_tty, in_tmux, readable_buf, tmux_escape_write, tmux_pane_tty};
 
@@ -42,6 +43,7 @@ impl TermWriter {
         } else {
             get_tty().await?
         };
+        info!("tty: {}", tty);
         let writer =
             tokio::fs::OpenOptions::new().write(true).open(tty).await?;
         let writer = BufWriter::new(writer);

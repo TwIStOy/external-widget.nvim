@@ -5,6 +5,7 @@ use std::{
 };
 
 use parking_lot::Mutex;
+use tracing::instrument;
 
 use crate::{
     kitty::{
@@ -88,6 +89,7 @@ impl Image {
         }
     }
 
+    #[instrument(skip(self))]
     pub async fn transmit(self: &Arc<Self>) -> anyhow::Result<()> {
         {
             let mut transmitted = self.transmitted.lock();
@@ -101,6 +103,7 @@ impl Image {
         writer.flush().await
     }
 
+    #[instrument(skip(self))]
     pub async fn render_at(&self, x: u32, y: u32) -> anyhow::Result<()> {
         let mut writer = TermWriter::new().await?;
         let mut should_transmit = false;
@@ -114,6 +117,7 @@ impl Image {
         if should_transmit {
             transmit_image(&self.buffer, &mut writer, ID(self.id)).await?;
             writer.flush().await?;
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
         }
         let action = ActionPut {
             x_offset: x,
@@ -124,13 +128,14 @@ impl Image {
         };
         let cmd = Command {
             action: Action::Put(action),
-            quietness: Quietness::None,
+            quietness: Quietness::SuppressAll,
             id: Some(ID(self.id)),
         };
         cmd.send(None, &mut writer).await?;
         writer.flush().await
     }
 
+    #[instrument(skip(self))]
     pub async fn delete_image(&self) -> anyhow::Result<()> {
         let mut writer = TermWriter::new().await?;
         delete_image(&mut writer, ID(self.id)).await?;

@@ -1,15 +1,7 @@
-use std::time::Duration;
-
-use anyhow::bail;
 use async_trait::async_trait;
-use external_widget_core::{
-    kitty::{display_image, transmit_image, ID},
-    nvim::{Nvim, NvimWriter},
-    TermWriter,
-};
+use external_widget_core::nvim::{Nvim, NvimWriter};
 use nvim_rs::{Handler, Neovim};
 use rmpv::Value;
-use tokio::time::sleep;
 use tracing::info;
 
 use self::hover::HoverHandler;
@@ -24,11 +16,12 @@ impl Handler for NeovimHandler {
     type Writer = NvimWriter;
 
     async fn handle_request(
-        &self, name: String, _args: Vec<Value>, _neovim: Neovim<Self::Writer>,
+        &self, name: String, args: Vec<Value>, neovim: Neovim<Self::Writer>,
     ) -> Result<Value, Value> {
         info!("handle_request: {}", name);
         let res = match name.as_ref() {
-            "start_hover" => self.process_req_start_hover(_args, _neovim).await,
+            "start_hover" => self.process_req_start_hover(args, neovim).await,
+            "stop_hover" => self.process_req_stop_hover(args, neovim).await,
             _ => unimplemented!(),
         };
         match res {
