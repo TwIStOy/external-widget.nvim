@@ -1,5 +1,6 @@
 local Utils = require("external-widget.utils")
 
+---@type number?
 local ch_id = nil
 
 local function kill_all()
