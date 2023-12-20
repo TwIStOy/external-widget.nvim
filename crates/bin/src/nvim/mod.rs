@@ -52,8 +52,8 @@ async fn create_neovim_from_tcp(tcp: TcpStream) {
         Box::new(writer.compat_write()),
         handler,
     );
+    let session = NvimSession::new(neovim);
 
-    // let session = NvimSession::new(neovim);
     tokio::spawn(async move {
         // TODO(hawtian): process neovim instance?
         if let Err(error) = io.await {

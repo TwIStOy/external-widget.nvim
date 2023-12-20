@@ -46,4 +46,6 @@ impl NvimSession {
             Err(_) => None,
         }
     }
+
+    // pub async fn get_tty(&self) -> anyhow::Result<String> {}
 }

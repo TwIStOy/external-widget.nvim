@@ -1,0 +1,7 @@
+[package]
+name = "ext-widget-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "440843c700455363383e0a4fc365a15deebd4717" }

@@ -496,6 +496,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ext-widget-core"
+version = "0.1.0"
+dependencies = [
+ "taffy",
+]
+
+[[package]]
 name = "external-widget"
 version = "0.1.0"
 dependencies = [
