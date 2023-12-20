@@ -1,5 +1,4 @@
 use std::{
-    borrow::BorrowMut,
     collections::HashMap,
     num::NonZeroU32,
     sync::{atomic::AtomicU32, Arc},
@@ -61,6 +60,10 @@ impl ImageManager {
         self.images.insert(image.id, image.clone());
         image
     }
+
+    pub fn find_image(&self, id: NonZeroU32) -> Option<Arc<Image>> {
+        self.images.get(&id).cloned()
+    }
 }
 
 impl Image {
@@ -85,23 +88,32 @@ impl Image {
         }
     }
 
-    pub async fn transmit(&self) -> anyhow::Result<()> {
-        let mut transmitted = self.transmitted.lock();
-        if *transmitted {
-            return Ok(());
+    pub async fn transmit(self: &Arc<Self>) -> anyhow::Result<()> {
+        {
+            let mut transmitted = self.transmitted.lock();
+            if *transmitted {
+                return Ok(());
+            }
+            *transmitted = true;
         }
         let mut writer = TermWriter::new().await?;
         transmit_image(&self.buffer, &mut writer, ID(self.id)).await?;
-        *transmitted = true;
         writer.flush().await
     }
 
     pub async fn render_at(&self, x: u32, y: u32) -> anyhow::Result<()> {
         let mut writer = TermWriter::new().await?;
-        let mut transmitted = self.transmitted.lock();
-        if !*transmitted {
+        let mut should_transmit = false;
+        {
+            let mut transmitted = self.transmitted.lock();
+            if !*transmitted {
+                *transmitted = true;
+                should_transmit = true;
+            }
+        }
+        if should_transmit {
             transmit_image(&self.buffer, &mut writer, ID(self.id)).await?;
-            *transmitted = true;
+            writer.flush().await?;
         }
         let action = ActionPut {
             x_offset: x,
@@ -122,8 +134,10 @@ impl Image {
     pub async fn delete_image(&self) -> anyhow::Result<()> {
         let mut writer = TermWriter::new().await?;
         delete_image(&mut writer, ID(self.id)).await?;
-        let mut transmitted = self.transmitted.lock();
-        *transmitted = false;
+        {
+            let mut transmitted = self.transmitted.lock();
+            *transmitted = false;
+        }
         writer.flush().await
     }
 }

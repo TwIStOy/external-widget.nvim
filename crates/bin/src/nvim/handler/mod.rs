@@ -10,6 +10,9 @@ use external_widget_core::{
 use nvim_rs::{Handler, Neovim};
 use rmpv::Value;
 use tokio::time::sleep;
+use tracing::info;
+
+use self::hover::HoverHandler;
 
 mod hover;
 
@@ -23,13 +26,14 @@ impl Handler for NeovimHandler {
     async fn handle_request(
         &self, name: String, _args: Vec<Value>, _neovim: Neovim<Self::Writer>,
     ) -> Result<Value, Value> {
-        println!("handle_request: {}", name);
-        match name.as_ref() {
-            "ping" => {
-                println!("ping");
-                Ok(Value::from("pong"))
-            }
+        info!("handle_request: {}", name);
+        let res = match name.as_ref() {
+            "start_hover" => self.process_req_start_hover(_args, _neovim).await,
             _ => unimplemented!(),
+        };
+        match res {
+            Ok(v) => Ok(v),
+            Err(e) => Err(Value::from(e.to_string())),
         }
     }
 
@@ -48,22 +52,9 @@ impl NeovimHandler {
     async fn handle_notify_impl(
         &self, name: String, args: Vec<Value>, nvim: Nvim,
     ) -> anyhow::Result<()> {
-        if name == "hover" {
-            if args.len() != 2 {
-                bail!("hover expects 2 arguments, got {}", args.len());
-            }
-            let md = args[0].as_str().unwrap_or_default();
-            let lang = args[1].as_str().unwrap_or_default();
-            println!("md: {}, lang: {}", md, lang);
-            let image =
-                hover::build_hover_doc_image(&nvim, md.to_string(), lang)
-                    .await?;
-            let mut writer = TermWriter::new().await?;
-            let id = ID(10.try_into().unwrap());
-            transmit_image(&image, &mut writer, id).await?;
-            sleep(Duration::from_millis(10)).await;
-            display_image(&mut writer, id).await?;
-        }
         Ok(())
     }
 }
+
+#[async_trait]
+impl HoverHandler for NeovimHandler {}

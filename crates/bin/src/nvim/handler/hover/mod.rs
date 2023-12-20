@@ -1,10 +1,11 @@
 mod hover_doc;
 
-use anyhow::bail;
+use std::num::NonZeroU32;
+
+use anyhow::{bail, Context};
 use async_trait::async_trait;
 use external_widget_core::{
-    kitty::transmit_image, nvim::Nvim, Image, ImageManager, TermWriter,
-    IMAGE_MANAGER,
+    kitty::ID, nvim::Nvim, ImageManager, IMAGE_MANAGER,
 };
 pub use hover_doc::build_hover_doc_image;
 use rmpv::Value;
@@ -20,8 +21,14 @@ pub(super) trait HoverHandler {
         if args.len() != 2 {
             bail!("hover expects 2 arguments, got {}", args.len());
         }
-        let md = args[0].as_str().unwrap_or_default().to_string();
-        let lang = args[1].as_str().unwrap_or_default().to_string();
+        let md = args[0]
+            .as_str()
+            .context("First args expect str")?
+            .to_string();
+        let lang = args[1]
+            .as_str()
+            .context("Second args expect str")?
+            .to_string();
         if md.is_empty() {
             bail!("hover expects non-empty markdown");
         }
@@ -33,7 +40,7 @@ pub(super) trait HoverHandler {
                     let image = IMAGE_MANAGER
                         .lock()
                         .new_image_from_id_buffer(id, image);
-                    image.transmit().await.unwrap();
+                    image.render_at(0, 0).await.unwrap();
                 }
                 Err(err) => {
                     warn!("Error building hover doc image: {}", err);
@@ -51,16 +58,28 @@ pub(super) trait HoverHandler {
         Ok(Value::from(u32::from(id)))
     }
 
-    async fn process_hover_notify(
+    /// Expect name: "stop_hover"
+    async fn process_req_stop_hover(
         &self, args: Vec<Value>, nvim: Nvim,
-    ) -> anyhow::Result<()> {
-        if args.len() != 2 {
-            bail!("hover expects 2 arguments, got {}", args.len());
+    ) -> anyhow::Result<Value> {
+        if args.len() != 1 {
+            bail!("stop_hover expects 1 argument, got {}", args.len());
         }
-        let md = args[0].as_str().unwrap_or_default();
-        let lang = args[1].as_str().unwrap_or_default();
-        let image = build_hover_doc_image(&nvim, md.to_string(), lang).await?;
-        let image = IMAGE_MANAGER.lock().new_image_from_buffer(image);
-        Ok(())
+        let id: ID = ID(NonZeroU32::try_from(
+            args[0].as_u64().context("Expect u64")? as u32,
+        )?);
+        tokio::spawn(async move {
+            let image = IMAGE_MANAGER.lock().find_image(id.0);
+            if let Some(image) = image {
+                if let Err(e) = image.delete_image().await {
+                    nvim.err_writeln(&format!("Error deleting image: {}", e))
+                        .await
+                        .unwrap_or_else(|e| {
+                            warn!("Error writing to nvim: {}", e);
+                        });
+                }
+            }
+        });
+        Ok(Value::from(u32::from(id.0)))
     }
 }
