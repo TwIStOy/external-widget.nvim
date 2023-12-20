@@ -1,5 +1,7 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
-use external_widget_core::nvim::{Nvim, NvimWriter};
+use external_widget_core::nvim::{Nvim, NvimSession, NvimWriter};
 use nvim_rs::{Handler, Neovim};
 use rmpv::Value;
 use tracing::info;

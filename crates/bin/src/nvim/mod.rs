@@ -1,6 +1,6 @@
 mod handler;
 
-use external_widget_core::nvim::NvimWriter;
+use external_widget_core::nvim::{NvimSession, NvimWriter};
 pub use handler::NeovimHandler;
 use nvim_rs::Neovim;
 use tokio::{
@@ -47,11 +47,13 @@ pub(crate) async fn start_parent() -> anyhow::Result<()> {
 async fn create_neovim_from_tcp(tcp: TcpStream) {
     let handler = NeovimHandler {};
     let (reader, writer) = split(tcp);
-    let (_neovim, io) = Neovim::<NvimWriter>::new(
+    let (neovim, io) = Neovim::<NvimWriter>::new(
         reader.compat(),
         Box::new(writer.compat_write()),
         handler,
     );
+
+    // let session = NvimSession::new(neovim);
     tokio::spawn(async move {
         // TODO(hawtian): process neovim instance?
         if let Err(error) = io.await {
