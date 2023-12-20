@@ -1,4 +1,4 @@
-use std::{rc::Rc, sync::Arc};
+use std::rc::Rc;
 
 use external_widget_core::{
     print_element_marker, Color, MeasureCtx, RenderCtx, Widget, WidgetTree,
@@ -54,6 +54,8 @@ impl Widget for Container {
                 width: (self.constraints.min_width),
                 height: (self.constraints.min_height),
             },
+            padding: self.constraints.padding,
+            margin: self.constraints.margin,
             ..Default::default()
         };
         let id = tree.new_leaf_with_context(style, self.clone())?;

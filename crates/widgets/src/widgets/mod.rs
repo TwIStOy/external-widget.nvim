@@ -7,7 +7,7 @@ mod row;
 
 pub use bar::Bar;
 pub use column::Column;
-pub use container::Container;
+pub use container::{Container, ContainerBorderStyle};
 pub use markup::MarkupParagraph;
 pub use md_doc::{MdDoc, MdDocOpts};
 pub use row::Row;

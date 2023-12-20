@@ -3,10 +3,14 @@ use std::{collections::HashMap, rc::Rc};
 use external_widget_core::{
     nvim::{hl_props_from_group, HighlightDefinition, Nvim},
     treesitter::TREE_SITTER,
+    Color,
 };
-use external_widget_widgets::{render_widget_tree_to_buf, MdDoc, MdDocOpts};
+use external_widget_widgets::{
+    render_widget_tree_to_buf, Container, ContainerBorderStyle, MdDoc,
+    MdDocOpts,
+};
 
-const BUILTIN_GROUPS: [&str; 1] = ["Normal"];
+const BUILTIN_GROUPS: [&str; 3] = ["Normal", "NormalNC", "NormalFloat"];
 
 async fn prepare_highlights(
     lang: &str, nvim: &Nvim,
@@ -43,6 +47,12 @@ pub async fn build_hover_doc_image(
     nvim: &Nvim, md: String, lang: &str,
 ) -> anyhow::Result<Vec<u8>> {
     let highlights = prepare_highlights(lang, nvim).await.unwrap_or_default();
+    let background = highlights
+        .get("Normal")
+        .map(|x| x.bg)
+        .or_else(|| highlights.get("NormalFloat").map(|x| x.bg))
+        .flatten()
+        .map(Color::from_u32);
     let opts = MdDocOpts {
         md,
         highlights,
@@ -50,7 +60,23 @@ pub async fn build_hover_doc_image(
         mono_font: "MonoLisa".to_string(),
         font_size: "14pt".to_string(),
     };
-    let widget = Rc::new(MdDoc::new(opts)?);
+    let doc = Rc::new(MdDoc::new(opts)?);
+    let mut root = Container::new(doc);
+    root.background = background;
+    root.constraints.padding = {
+        use taffy::{LengthPercentage, Rect};
+        Rect {
+            left: LengthPercentage::Length(10.),
+            right: LengthPercentage::Length(10.),
+            top: LengthPercentage::Length(10.),
+            bottom: LengthPercentage::Length(10.),
+        }
+    };
+    root.border = Some(ContainerBorderStyle {
+        color: Color::from_u32(0x000000),
+        width: 1.0,
+    });
+    let widget = Rc::new(root);
     let buffer = render_widget_tree_to_buf(widget, 1000, 1000)?;
     Ok(buffer)
 }

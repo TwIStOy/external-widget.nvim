@@ -507,6 +507,7 @@ dependencies = [
  "nvim-rs",
  "rmpv",
  "serde",
+ "taffy",
  "tokio",
  "tokio-util",
  "tracing",

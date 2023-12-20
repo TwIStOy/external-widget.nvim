@@ -9,12 +9,13 @@ use external_widget_core::{
 };
 pub use hover_doc::build_hover_doc_image;
 use rmpv::Value;
-use tracing::warn;
+use tracing::{instrument, warn};
 
 #[async_trait]
 pub(super) trait HoverHandler {
     /// Returns the image's id immediately.
     /// Expect name: "start_hover"
+    #[instrument(skip(self, nvim))]
     async fn process_req_start_hover(
         &self, args: Vec<Value>, nvim: Nvim,
     ) -> anyhow::Result<Value> {
@@ -59,6 +60,7 @@ pub(super) trait HoverHandler {
     }
 
     /// Expect name: "stop_hover"
+    #[instrument(skip(self, nvim))]
     async fn process_req_stop_hover(
         &self, args: Vec<Value>, nvim: Nvim,
     ) -> anyhow::Result<Value> {
