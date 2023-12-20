@@ -168,3 +168,9 @@ impl TryFrom<Object> for FlexibleLengthAuto {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct RectSize<T> {
+    pub width: T,
+    pub height: T,
+}
