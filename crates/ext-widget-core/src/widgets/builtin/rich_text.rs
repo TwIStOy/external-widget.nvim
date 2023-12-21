@@ -16,7 +16,15 @@ pub struct RichText {
     paragraph: RefCell<Paragraph>,
 }
 
-impl RichText {}
+impl RichText {
+    /// Create a new RichText widget with the given paragraph.
+    pub fn new_with_paragraph(paragraph: Paragraph) -> Self {
+        Self {
+            key: WidgetKey::next(),
+            paragraph: RefCell::new(paragraph),
+        }
+    }
+}
 
 impl LayoutElement for RichText {
     fn style(&self) -> BoxOptions {
@@ -43,7 +51,12 @@ impl Widget for RichText {
         self.key
     }
 
-    fn paint<'r>(&self, render: &mut RenderCtx<'r>) -> anyhow::Result<()> {
-        todo!()
+    fn paint(&self, render: &mut RenderCtx<'_>) -> anyhow::Result<()> {
+        let canvas = render.render.canvas();
+        let mut paragraph = self.paragraph.borrow_mut();
+        // confirm that the paragraph is laid out
+        paragraph.layout(render.size.width);
+        paragraph.paint(canvas, render.top_left_location);
+        Ok(())
     }
 }

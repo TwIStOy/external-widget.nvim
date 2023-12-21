@@ -36,8 +36,8 @@ pub trait Widget: LayoutElement + Debug {
     }
 
     /// Returns all children of this widget.
-    fn children(&self) -> &[Rc<dyn Widget>] {
-        &[]
+    fn children(&self) -> Vec<Rc<dyn Widget>> {
+        vec![]
     }
 
     /// Paint widget.

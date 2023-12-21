@@ -39,8 +39,8 @@ impl Widget for Column {
         self.key
     }
 
-    fn children(&self) -> &[Rc<dyn Widget>] {
-        &self.children
+    fn children(&self) -> Vec<Rc<dyn Widget>> {
+        self.children.clone()
     }
 
     fn paint(&self, _render: &mut RenderCtx<'_>) -> anyhow::Result<()> {
