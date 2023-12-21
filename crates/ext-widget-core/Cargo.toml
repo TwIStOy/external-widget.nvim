@@ -10,3 +10,4 @@ taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "440843c70045536338
 nvim-oxi = { version = "0.4.1", features = ["neovim-nightly"] }
 thiserror = "1.0.51"
 anyhow = "1.0.76"
+skia-safe = { version = "0.69.0", features = [ "binary-cache", "embed-icudtl", "textlayout" ] }

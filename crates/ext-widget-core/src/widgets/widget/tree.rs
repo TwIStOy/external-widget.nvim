@@ -1,12 +1,12 @@
 use std::rc::Rc;
 
-use anyhow::bail;
+use anyhow::{bail, Context};
 use taffy::{AvailableSpace, NodeId, TaffyTree};
 use tracing::trace;
 
-use crate::widgets::support::RectSize;
+use crate::painting::RectSize;
 
-use super::Widget;
+use super::{Widget, WidgetExt};
 
 /// Widget tree
 pub struct WidgetTree {
@@ -85,14 +85,31 @@ impl WidgetTree {
     pub fn new_leaf(
         &mut self, widget: Rc<dyn Widget>,
     ) -> anyhow::Result<NodeId> {
-        let node = self
-            .inner
-            .new_leaf_with_context(widget.style().into(), widget.clone())?;
+        let mut style: taffy::Style = widget.style().into();
+        style.display = taffy::Display::Flex;
+        let node = self.inner.new_leaf_with_context(style, widget.clone())?;
         for child in widget.children() {
-            let cid = self.new_leaf(child)?;
+            let cid = self.new_leaf(child.clone())?;
             self.inner.add_child(node, cid)?;
         }
         Ok(node)
+    }
+
+    pub fn debug_tree(&self) -> anyhow::Result<Vec<String>> {
+        if self.root.is_none() {
+            bail!("root is not set")
+        }
+        let root = self.root.unwrap();
+
+        let mut lines = vec![];
+        let mut lasts = vec![];
+
+        self.inner
+            .get_node_context(root)
+            .context("No context?")?
+            .debug_tree(&mut lasts, &mut lines);
+
+        Ok(lines)
     }
 
     fn dfs<F>(&self, node: NodeId, f: &mut F) -> anyhow::Result<()>

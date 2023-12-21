@@ -1,5 +1,7 @@
+use std::ops::AddAssign;
+
 use nvim_oxi::{Object, ObjectKind};
-use taffy::{LengthPercentage, LengthPercentageAuto, Rect};
+use taffy::{LengthPercentage, LengthPercentageAuto, Point, Rect};
 use thiserror::Error;
 
 use super::{
@@ -34,6 +36,12 @@ pub struct Margin {
 pub enum Axis {
     Horizontal,
     Vertical,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Location {
+    pub x: f32,
+    pub y: f32,
 }
 
 impl Default for Axis {
@@ -375,5 +383,38 @@ impl From<Axis> for taffy::FlexDirection {
             Axis::Horizontal => Self::Row,
             Axis::Vertical => Self::Column,
         }
+    }
+}
+
+impl From<Point<f32>> for Location {
+    fn from(value: Point<f32>) -> Self {
+        Self {
+            x: value.x,
+            y: value.y,
+        }
+    }
+}
+
+impl AddAssign for Location {
+    fn add_assign(&mut self, rhs: Self) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+    }
+}
+
+impl AddAssign<Point<f32>> for Location {
+    fn add_assign(&mut self, rhs: Point<f32>) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+    }
+}
+
+impl Location {
+    pub const ZERO: Location = Location { x: 0.0, y: 0.0 };
+}
+
+impl From<Location> for skia_safe::Point {
+    fn from(value: Location) -> Self {
+        Self::new(value.x, value.y)
     }
 }

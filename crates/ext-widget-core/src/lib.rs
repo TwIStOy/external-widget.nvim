@@ -1,1 +1,3 @@
-mod widgets;
+pub mod widgets;
+pub mod painting;
+

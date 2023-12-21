@@ -2,7 +2,7 @@ use nvim_oxi::{Object, ObjectKind};
 use std::fmt::Debug;
 use thiserror::Error;
 
-use crate::widgets::support::{
+use crate::painting::{
     Axis, BoxConstraints, Margin, Padding, ParseAxisError,
     ParseBoxConstraintsError, ParsePaddingError,
 };
@@ -73,6 +73,7 @@ impl From<BoxOptions> for taffy::Style {
                 width: value.constraints.max_width.into(),
                 height: value.constraints.max_height.into(),
             },
+            flex_direction: value.axis.into(),
             ..Default::default()
         }
     }

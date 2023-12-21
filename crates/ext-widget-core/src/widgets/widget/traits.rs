@@ -1,6 +1,6 @@
-use std::{rc::Rc, sync::atomic::AtomicU64};
+use std::{fmt::Debug, rc::Rc, sync::atomic::AtomicU64};
 
-use crate::widgets::support::RectSize;
+use crate::painting::{RectSize, RenderCtx};
 
 use super::BoxOptions;
 
@@ -8,7 +8,7 @@ static WIDGET_KEY: AtomicU64 = AtomicU64::new(0);
 
 /// Unique key for each widget.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct WidgeKey(u64);
+pub struct WidgetKey(u64);
 
 /// An element can be used in layout computation.
 pub trait LayoutElement {
@@ -24,9 +24,9 @@ pub trait LayoutElement {
     }
 }
 
-pub trait Widget: LayoutElement {
+pub trait Widget: LayoutElement + Debug {
     /// Get the unique key of the widget.
-    fn key(&self) -> WidgeKey;
+    fn key(&self) -> WidgetKey;
 
     /// Get the type name of the widget for debug.
     ///
@@ -36,12 +36,16 @@ pub trait Widget: LayoutElement {
     }
 
     /// Returns all children of this widget.
-    fn children(&self) -> Vec<Rc<dyn Widget>> {
-        vec![]
+    fn children(&self) -> &[Rc<dyn Widget>] {
+        &[]
     }
+
+    /// Paint widget.
+    /// Each widget should only paint itself.
+    fn paint(&self, render: &mut RenderCtx<'_>) -> anyhow::Result<()>;
 }
 
-impl WidgeKey {
+impl WidgetKey {
     pub fn next() -> Self {
         Self(WIDGET_KEY.fetch_add(1, std::sync::atomic::Ordering::SeqCst))
     }

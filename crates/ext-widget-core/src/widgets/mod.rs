@@ -1,4 +1,3 @@
-mod support;
 mod widget;
 mod builtin;
 

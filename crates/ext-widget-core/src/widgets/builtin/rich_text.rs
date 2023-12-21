@@ -1,0 +1,49 @@
+use std::cell::RefCell;
+
+use skia_safe::textlayout::Paragraph;
+
+use crate::{
+    painting::{RectSize, RenderCtx},
+    widgets::{
+        widget::{LayoutElement, Widget, WidgetKey},
+        BoxOptions,
+    },
+};
+
+#[derive(Debug)]
+pub struct RichText {
+    key: WidgetKey,
+    paragraph: RefCell<Paragraph>,
+}
+
+impl RichText {}
+
+impl LayoutElement for RichText {
+    fn style(&self) -> BoxOptions {
+        Default::default()
+    }
+
+    fn compute_layout(
+        &self, known_dimensions: RectSize<Option<f32>>,
+        available_space: RectSize<f32>,
+    ) -> RectSize<f32> {
+        let width_constraint =
+            known_dimensions.width.unwrap_or(available_space.width);
+        let mut paragraph = self.paragraph.borrow_mut();
+        paragraph.layout(width_constraint);
+        RectSize {
+            width: paragraph.longest_line(),
+            height: paragraph.height(),
+        }
+    }
+}
+
+impl Widget for RichText {
+    fn key(&self) -> WidgetKey {
+        self.key
+    }
+
+    fn paint<'r>(&self, render: &mut RenderCtx<'r>) -> anyhow::Result<()> {
+        todo!()
+    }
+}
