@@ -5,10 +5,18 @@ edition = "2021"
 
 [dependencies]
 tracing = { workspace = true }
+serde = { workspace = true }
 
-taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "440843c700455363383e0a4fc365a15deebd4717", features = ["serde"] }
+taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "440843c700455363383e0a4fc365a15deebd4717", features = [
+  "serde",
+] }
 nvim-oxi = { version = "0.4.1", features = ["neovim-nightly"] }
 thiserror = "1.0.51"
 anyhow = "1.0.76"
-skia-safe = { version = "0.69.0", features = [ "binary-cache", "embed-icudtl", "textlayout" ] }
+skia-safe = { version = "0.69.0", features = [
+  "binary-cache",
+  "embed-icudtl",
+  "textlayout",
+] }
 base64 = "0.21.5"
+comrak = "0.20.0"

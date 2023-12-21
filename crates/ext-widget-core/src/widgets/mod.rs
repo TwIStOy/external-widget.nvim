@@ -1,6 +1,7 @@
-mod widget;
 mod builtin;
+mod others;
+mod widget;
 
 // re-export
-pub use widget::{BoxOptions, ParseBoxOptionsError};
 pub use builtin::*;
+pub use widget::{BoxOptions, ParseBoxOptionsError};

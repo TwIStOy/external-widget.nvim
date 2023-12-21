@@ -59,6 +59,6 @@ pub trait Widget: LayoutElement + Debug {
 
 impl WidgetKey {
     pub fn next() -> Self {
-        Self(WIDGET_KEY.fetch_add(1, std::sync::atomic::Ordering::SeqCst))
+        Self(WIDGET_KEY.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
     }
 }

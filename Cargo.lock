@@ -564,7 +564,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64",
+ "comrak",
  "nvim-oxi",
+ "serde",
  "skia-safe",
  "taffy",
  "thiserror",
