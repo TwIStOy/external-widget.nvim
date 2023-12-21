@@ -48,16 +48,19 @@ impl Widget for Container {
         }
 
         let canvas = context.render.canvas();
-        let mut paint = Paint::default();
+        let mut fill_paint = Paint::default();
+        let mut stroke_paint = Paint::default();
+        fill_paint.set_style(skia_safe::paint::Style::Fill);
+        stroke_paint.set_style(skia_safe::paint::Style::Stroke);
+
         // set color
         let rect = skia_safe::Rect::from_point_and_size(
             context.top_left_location,
             context.size,
         );
-        let mut rrect = skia_safe::RRect::new_rect(rect);
 
         if self.decoration.border.width > 0.0 {
-            paint.set_stroke_width(self.decoration.border.width);
+            stroke_paint.set_stroke_width(self.decoration.border.width);
         }
         let radius = match self.decoration.border.radius {
             crate::painting::FlexibleLength::Fixed(l) => l,
@@ -65,16 +68,14 @@ impl Widget for Container {
                 context.size.width * p
             }
         };
-        if radius > 0.0 {
-            rrect.set_rect_xy(rect, radius, radius);
-        }
         if self.decoration.color.alpha > 0 {
             let color: skia_safe::Color = self.decoration.color.into();
-            paint.set_color(color);
-            canvas.draw_rrect(rrect, &paint);
+            fill_paint.set_color(color);
         }
 
-        canvas.draw_rect(rect, &paint);
+        canvas
+            .draw_round_rect(rect, radius, radius, &fill_paint)
+            .draw_round_rect(rect, radius, radius, &stroke_paint);
 
         Ok(())
     }
