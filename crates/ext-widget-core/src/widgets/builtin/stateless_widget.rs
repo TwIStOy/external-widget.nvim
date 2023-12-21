@@ -29,7 +29,7 @@ impl<T: StatelessWidget> StatelessWidgetPod<T> {
         }
     }
 
-    pub fn build(&self, context: &BuildContext) -> Rc<dyn Widget> {
+    pub fn build_inner(&self, context: &BuildContext) -> Rc<dyn Widget> {
         let mut child = self.child.borrow_mut();
         if child.is_none() || context.is_dirty(self.key) {
             let c = self.widget.build(context);
@@ -75,5 +75,14 @@ impl<T: StatelessWidget> Widget for StatelessWidgetPod<T> {
 
     fn type_name(&self) -> &'static str {
         self.child.borrow().as_ref().unwrap().type_name()
+    }
+
+    fn need_build(&self) -> bool {
+        true
+    }
+
+    fn build(&self, context: &BuildContext) -> anyhow::Result<()> {
+        self.build_inner(context);
+        Ok(())
     }
 }

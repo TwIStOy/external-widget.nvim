@@ -2,7 +2,7 @@ use std::{fmt::Debug, rc::Rc, sync::atomic::AtomicU64};
 
 use crate::painting::{RectSize, RenderCtx};
 
-use super::BoxOptions;
+use super::{BoxOptions, BuildContext};
 
 static WIDGET_KEY: AtomicU64 = AtomicU64::new(0);
 
@@ -38,6 +38,18 @@ pub trait Widget: LayoutElement + Debug {
     /// Returns all children of this widget.
     fn children(&self) -> Vec<Rc<dyn Widget>> {
         vec![]
+    }
+
+    /// Returns is this widget need to build. Eg. [`StatefulWidget`] should
+    /// return `true`.:
+    fn need_build(&self) -> bool {
+        false
+    }
+
+    /// If previous `need_build` returns `true`, the widget need build context
+    /// to build itself.
+    fn build(&self, _context: &BuildContext) -> anyhow::Result<()> {
+        Ok(())
     }
 
     /// Paint widget.
