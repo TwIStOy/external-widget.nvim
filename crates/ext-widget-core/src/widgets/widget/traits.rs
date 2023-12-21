@@ -1,13 +1,30 @@
-use std::sync::atomic::AtomicU64;
+use std::{rc::Rc, sync::atomic::AtomicU64};
 
 use crate::widgets::support::RectSize;
 
+use super::BoxOptions;
+
 static WIDGET_KEY: AtomicU64 = AtomicU64::new(0);
 
+/// Unique key for each widget.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct WidgeKey(u64);
 
-pub trait Widget {
+/// An element can be used in layout computation.
+pub trait LayoutElement {
+    /// Returns the style for initial layout tree registration.
+    fn style(&self) -> BoxOptions;
+
+    /// Returns the estimated size of this element.
+    fn compute_layout(
+        &self, _known_dimensions: RectSize<Option<f32>>,
+        _available_space: RectSize<f32>,
+    ) -> RectSize<f32> {
+        RectSize::default()
+    }
+}
+
+pub trait Widget: LayoutElement {
     /// Get the unique key of the widget.
     fn key(&self) -> WidgeKey;
 
@@ -18,19 +35,10 @@ pub trait Widget {
         std::any::type_name::<Self>()
     }
 
-    /// Measure the widget, returns the expected size of this widget.
-    fn measure(&self) -> RectSize<f32> {
-        RectSize {
-            width: 0.0,
-            height: 0.0,
-        }
+    /// Returns all children of this widget.
+    fn children(&self) -> Vec<Rc<dyn Widget>> {
+        vec![]
     }
-
-    /// Mount this widget into the widget tree. It's each widget's duty to also
-    /// mount its children.
-    ///
-    /// Returns the widget id.
-    fn mount(&mut self) -> u64;
 }
 
 impl WidgeKey {

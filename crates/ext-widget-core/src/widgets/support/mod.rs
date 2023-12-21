@@ -3,8 +3,8 @@ mod style;
 
 // re-export
 pub use layout::{
-    BoxConstraints, Margin, Padding, ParseBoxConstraintsError,
-    ParsePaddingError,
+    Axis, BoxConstraints, Margin, Padding, ParseAxisError,
+    ParseBoxConstraintsError, ParsePaddingError,
 };
 pub use style::{
     FlexibleLength, FlexibleLengthAuto, ParseFlexibleLengthError, RectSize,

@@ -1,8 +1,10 @@
 use nvim_oxi::{Object, ObjectKind};
-use taffy::{LengthPercentage, Rect};
+use taffy::{LengthPercentage, LengthPercentageAuto, Rect};
 use thiserror::Error;
 
-use super::{style::ParseFlexibleLengthError, FlexibleLength, FlexibleLengthAuto};
+use super::{
+    style::ParseFlexibleLengthError, FlexibleLength, FlexibleLengthAuto,
+};
 
 #[derive(Debug, Default, Clone)]
 pub struct BoxConstraints {
@@ -26,6 +28,18 @@ pub struct Margin {
     pub right: FlexibleLength,
     pub top: FlexibleLength,
     pub bottom: FlexibleLength,
+}
+
+#[derive(Debug, Clone)]
+pub enum Axis {
+    Horizontal,
+    Vertical,
+}
+
+impl Default for Axis {
+    fn default() -> Self {
+        Self::Horizontal
+    }
 }
 
 impl Default for Padding {
@@ -134,6 +148,17 @@ impl From<Padding> for Rect<LengthPercentage> {
 }
 
 impl From<Margin> for Rect<LengthPercentage> {
+    fn from(margin: Margin) -> Self {
+        Self {
+            left: margin.left.into(),
+            right: margin.right.into(),
+            top: margin.top.into(),
+            bottom: margin.bottom.into(),
+        }
+    }
+}
+
+impl From<Margin> for Rect<LengthPercentageAuto> {
     fn from(margin: Margin) -> Self {
         Self {
             left: margin.left.into(),
@@ -313,6 +338,42 @@ impl TryFrom<Object> for Margin {
                 })
             }
             _ => Err(ParsePaddingError::InvalidType(object.kind())),
+        }
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum ParseAxisError {
+    #[error("invalid type, expect string, got {0:?}")]
+    InvalidType(ObjectKind),
+    #[error("invalid value, {0}")]
+    BadString(String),
+}
+
+impl TryFrom<Object> for Axis {
+    type Error = ParseAxisError;
+
+    fn try_from(value: Object) -> Result<Self, Self::Error> {
+        match value.kind() {
+            ObjectKind::String => {
+                let s = unsafe { value.into_string_unchecked() };
+                let s = s.to_string_lossy();
+                match &*s {
+                    "horizontal" => Ok(Self::Horizontal),
+                    "vertical" => Ok(Self::Vertical),
+                    _ => Err(ParseAxisError::BadString(s.to_string())),
+                }
+            }
+            _ => Err(ParseAxisError::InvalidType(value.kind())),
+        }
+    }
+}
+
+impl From<Axis> for taffy::FlexDirection {
+    fn from(axis: Axis) -> Self {
+        match axis {
+            Axis::Horizontal => Self::Row,
+            Axis::Vertical => Self::Column,
         }
     }
 }

@@ -4,4 +4,5 @@ mod tree;
 
 // re-export
 pub use options::{BoxOptions, ParseBoxOptionsError};
-pub use traits::Widget;
+pub use traits::{WidgeKey, Widget};
+pub use tree::WidgetTree;
