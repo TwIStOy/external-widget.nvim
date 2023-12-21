@@ -1,6 +1,8 @@
 use std::fmt::Debug;
 
-use skia_safe::{surfaces, Canvas, Surface};
+use anyhow::Context;
+use base64::Engine;
+use skia_safe::{surfaces, Canvas, EncodedImageFormat, Surface};
 
 use super::{Location, RectSize};
 
@@ -18,6 +20,22 @@ impl Renderer {
 
     pub fn canvas(&mut self) -> &Canvas {
         self.surface.canvas()
+    }
+
+    /// Take snapshot of current canvas, encode it to png, then encode it to
+    /// base64 format.
+    pub fn snapshot_png(&mut self) -> anyhow::Result<String> {
+        let image = self.surface.image_snapshot();
+        let data = image
+            .encode(
+                &mut self.surface.direct_context(),
+                EncodedImageFormat::PNG,
+                None,
+            )
+            .context("Failed to encode png")?;
+        let encoded =
+            base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
+        Ok(encoded)
     }
 }
 

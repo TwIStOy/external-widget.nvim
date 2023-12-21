@@ -122,3 +122,9 @@ impl TryFrom<Object> for Color {
         }
     }
 }
+
+impl From<Color> for skia_safe::Color {
+    fn from(value: Color) -> Self {
+        Self::from_argb(value.alpha, value.red, value.green, value.blue)
+    }
+}

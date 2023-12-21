@@ -201,3 +201,12 @@ impl<T> From<RectSize<T>> for taffy::Size<T> {
         }
     }
 }
+
+impl From<RectSize<f32>> for skia_safe::Size {
+    fn from(value: RectSize<f32>) -> Self {
+        Self {
+            width: value.width,
+            height: value.height,
+        }
+    }
+}

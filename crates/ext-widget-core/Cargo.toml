@@ -11,3 +11,4 @@ nvim-oxi = { version = "0.4.1", features = ["neovim-nightly"] }
 thiserror = "1.0.51"
 anyhow = "1.0.76"
 skia-safe = { version = "0.69.0", features = [ "binary-cache", "embed-icudtl", "textlayout" ] }
+base64 = "0.21.5"

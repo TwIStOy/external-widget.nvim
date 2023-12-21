@@ -563,6 +563,7 @@ name = "ext-widget-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64",
  "nvim-oxi",
  "skia-safe",
  "taffy",

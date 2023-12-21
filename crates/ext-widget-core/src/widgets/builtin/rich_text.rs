@@ -51,12 +51,12 @@ impl Widget for RichText {
         self.key
     }
 
-    fn paint(&self, render: &mut RenderCtx<'_>) -> anyhow::Result<()> {
-        let canvas = render.render.canvas();
+    fn paint(&self, context: &mut RenderCtx<'_>) -> anyhow::Result<()> {
+        let canvas = context.render.canvas();
         let mut paragraph = self.paragraph.borrow_mut();
         // confirm that the paragraph is laid out
-        paragraph.layout(render.size.width);
-        paragraph.paint(canvas, render.top_left_location);
+        paragraph.layout(context.size.width);
+        paragraph.paint(canvas, context.top_left_location);
         Ok(())
     }
 }

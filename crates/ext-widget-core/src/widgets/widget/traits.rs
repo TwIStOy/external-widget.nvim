@@ -54,7 +54,7 @@ pub trait Widget: LayoutElement + Debug {
 
     /// Paint widget.
     /// Each widget should only paint itself.
-    fn paint(&self, render: &mut RenderCtx<'_>) -> anyhow::Result<()>;
+    fn paint(&self, context: &mut RenderCtx<'_>) -> anyhow::Result<()>;
 }
 
 impl WidgetKey {
