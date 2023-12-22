@@ -14,7 +14,7 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new() -> anyhow::Result<Self> {
-        let surface = surfaces::raster_n32_premul((100, 100)).unwrap();
+        let surface = surfaces::raster_n32_premul((1000, 1000)).unwrap();
         Ok(Self { surface })
     }
 
@@ -36,6 +36,18 @@ impl Renderer {
         let encoded =
             base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
         Ok(encoded)
+    }
+
+    pub fn snapshot_png_raw(&mut self) -> anyhow::Result<Vec<u8>> {
+        let image = self.surface.image_snapshot();
+        let data = image
+            .encode(
+                &mut self.surface.direct_context(),
+                EncodedImageFormat::PNG,
+                None,
+            )
+            .context("Failed to encode png")?;
+        Ok(data.as_bytes().to_vec())
     }
 }
 

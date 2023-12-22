@@ -1,6 +1,6 @@
 use std::{fmt::Debug, rc::Rc, sync::atomic::AtomicU64};
 
-use crate::painting::{RectSize, RenderCtx};
+use crate::painting::{RectSize, RenderCtx, SpacePolicy};
 
 use super::{BoxOptions, BuildContext};
 
@@ -18,7 +18,7 @@ pub trait LayoutElement {
     /// Returns the estimated size of this element.
     fn compute_layout(
         &self, _known_dimensions: RectSize<Option<f32>>,
-        _available_space: RectSize<f32>,
+        _available_space: RectSize<SpacePolicy>,
     ) -> RectSize<f32> {
         RectSize::default()
     }
@@ -32,7 +32,13 @@ pub trait Widget: LayoutElement + Debug {
     ///
     /// This method should not be overrided.
     fn type_name(&self) -> &'static str {
-        std::any::type_name::<Self>()
+        let name = std::any::type_name::<Self>();
+        name.split('<')
+            .next()
+            .unwrap_or(name)
+            .split("::")
+            .last()
+            .unwrap_or(name)
     }
 
     /// Returns all children of this widget.

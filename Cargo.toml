@@ -5,9 +5,8 @@ members = [
   "crates/core",
   "crates/widgets",
   "crates/ext-widget-core",
+  "crates/tests",
 ]
-
-exclude = ["tests"]
 
 [workspace.dependencies]
 external-widget-core = { path = "crates/core" }

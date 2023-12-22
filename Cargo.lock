@@ -592,6 +592,8 @@ dependencies = [
  "taffy",
  "thiserror",
  "tracing",
+ "tracing-log",
+ "tracing-subscriber",
  "tree-sitter",
 ]
 
@@ -2234,6 +2236,15 @@ checksum = "21bebf2b7c9e0a515f6e0f8c51dc0f8e4696391e6f1ff30379559f8365fb0df7"
 dependencies = [
  "rustix",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "tests"
+version = "0.1.0"
+dependencies = [
+ "all_asserts",
+ "ext-widget-core",
+ "nvim-oxi",
 ]
 
 [[package]]

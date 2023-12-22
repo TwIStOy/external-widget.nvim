@@ -1,5 +1,6 @@
 #![allow(dead_code)]
-pub mod widgets;
-pub mod painting;
 pub mod nvim;
+pub mod painting;
+pub mod widgets;
 
+mod logger;

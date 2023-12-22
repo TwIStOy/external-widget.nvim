@@ -1,4 +1,4 @@
-use std::ops::AddAssign;
+use std::ops::{Add, AddAssign};
 
 use nvim_oxi::{Object, ObjectKind};
 use taffy::{LengthPercentage, LengthPercentageAuto, Point, Rect};
@@ -42,6 +42,13 @@ pub enum Axis {
 pub struct Location {
     pub x: f32,
     pub y: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum SpacePolicy {
+    Fixed(f32),
+    Shrink,
+    Expand,
 }
 
 impl Default for Axis {
@@ -409,6 +416,17 @@ impl AddAssign<Point<f32>> for Location {
     }
 }
 
+impl Add<Point<f32>> for Location {
+    type Output = Self;
+
+    fn add(self, rhs: Point<f32>) -> Self::Output {
+        Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
+    }
+}
+
 impl Location {
     pub const ZERO: Location = Location { x: 0.0, y: 0.0 };
 }
@@ -416,5 +434,15 @@ impl Location {
 impl From<Location> for skia_safe::Point {
     fn from(value: Location) -> Self {
         Self::new(value.x, value.y)
+    }
+}
+
+impl From<taffy::AvailableSpace> for SpacePolicy {
+    fn from(value: taffy::AvailableSpace) -> Self {
+        match value {
+            taffy::AvailableSpace::Definite(v) => Self::Fixed(v),
+            taffy::AvailableSpace::MinContent => Self::Shrink,
+            taffy::AvailableSpace::MaxContent => Self::Expand,
+        }
     }
 }

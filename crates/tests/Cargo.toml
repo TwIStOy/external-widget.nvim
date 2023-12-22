@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-ext-widget-core = { path = "../crates/ext-widget-core" }
+ext-widget-core = { path = "../ext-widget-core" }
 nvim-oxi = { version = "0.4.1", features = [
   "neovim-nightly",
   "test",

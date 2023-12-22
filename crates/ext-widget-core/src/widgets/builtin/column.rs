@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{fmt::Debug, rc::Rc};
 
 use crate::{
     painting::{Axis, RenderCtx},
@@ -8,10 +8,18 @@ use crate::{
     },
 };
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Column {
     key: WidgetKey,
     children: Vec<Rc<dyn Widget>>,
+}
+
+impl Debug for Column {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Column")
+            .field("children", &self.children.len())
+            .finish()
+    }
 }
 
 impl Column {

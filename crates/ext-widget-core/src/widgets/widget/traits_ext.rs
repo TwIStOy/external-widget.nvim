@@ -25,16 +25,16 @@ fn append_marker(lines: &mut Vec<String>, lasts: &[bool]) {
 }
 
 pub(crate) trait WidgetExt: Widget {
-    fn debug_tree(&self, lasts: &mut Vec<bool>, lines: &mut Vec<String>) {
+    fn debug_tree(
+        &self, extra_info: String, lasts: &mut Vec<bool>,
+        lines: &mut Vec<String>,
+    ) {
         append_marker(lines, lasts);
-        lines.last_mut().unwrap().push_str(self.type_name());
+        lines
+            .last_mut()
+            .unwrap()
+            .push_str(&format!("{:?}, {}", self, extra_info));
         lines.push(String::new());
-        for (i, child) in self.children().iter().enumerate() {
-            let last = i == self.children().len() - 1;
-            lasts.push(last);
-            child.debug_tree(lasts, lines);
-            lasts.pop();
-        }
     }
 }
 

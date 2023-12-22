@@ -1,6 +1,9 @@
 use std::{cell::RefCell, fmt::Debug, rc::Rc};
 
-use crate::widgets::widget::{BuildContext, LayoutElement, Widget, WidgetKey};
+use crate::{
+    painting::SpacePolicy,
+    widgets::widget::{BuildContext, LayoutElement, Widget, WidgetKey},
+};
 
 pub trait StatelessWidget: Debug {
     fn build(&self, context: &BuildContext) -> Rc<dyn Widget>;
@@ -48,7 +51,7 @@ impl<T: StatelessWidget> LayoutElement for StatelessWidgetPod<T> {
 
     fn compute_layout(
         &self, known_dimensions: crate::painting::RectSize<Option<f32>>,
-        available_space: crate::painting::RectSize<f32>,
+        available_space: crate::painting::RectSize<SpacePolicy>,
     ) -> crate::painting::RectSize<f32> {
         self.child
             .borrow()

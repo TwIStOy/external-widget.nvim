@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{fmt::Debug, rc::Rc};
 
 use crate::{
     painting::{Axis, RenderCtx},
@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Row {
     key: WidgetKey,
     children: Vec<Rc<dyn Widget>>,
@@ -22,6 +22,14 @@ impl Row {
 
     pub fn add_child(&mut self, child: Rc<dyn Widget>) {
         self.children.push(child);
+    }
+}
+
+impl Debug for Row {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Row")
+            .field("children", &self.children.len())
+            .finish()
     }
 }
 

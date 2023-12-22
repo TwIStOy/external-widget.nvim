@@ -3,7 +3,7 @@ use std::rc::Rc;
 use skia_safe::Paint;
 
 use crate::{
-    painting::{BoxDecoration, RectSize},
+    painting::{BoxDecoration, RectSize, SpacePolicy},
     widgets::{
         widget::{LayoutElement, Widget, WidgetKey},
         BoxOptions,
@@ -36,7 +36,7 @@ impl LayoutElement for Container {
 
     fn compute_layout(
         &self, known_dimensions: RectSize<Option<f32>>,
-        available_space: RectSize<f32>,
+        available_space: RectSize<SpacePolicy>,
     ) -> RectSize<f32> {
         if let Some(c) = &self.child {
             c.compute_layout(known_dimensions, available_space)
