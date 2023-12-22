@@ -17,23 +17,7 @@ pub(super) struct HighlightMarker {
 
 impl PartialOrd for HighlightMarker {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.offset != other.offset {
-            self.offset.partial_cmp(&other.offset)
-        } else if self.kind == other.kind {
-            match self.kind {
-                HighlightMarkerType::Start => {
-                    self.group.partial_cmp(&other.group)
-                }
-                HighlightMarkerType::End => {
-                    other.group.partial_cmp(&self.group)
-                }
-            }
-        } else {
-            Some(match self.kind {
-                HighlightMarkerType::Start => std::cmp::Ordering::Greater,
-                HighlightMarkerType::End => std::cmp::Ordering::Less,
-            })
-        }
+        Some(self.cmp(other))
     }
 }
 

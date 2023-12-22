@@ -1,7 +1,9 @@
-use std::rc::Rc;
+use std::{borrow::BorrowMut, cell::RefCell, rc::Rc};
 
 use anyhow::bail;
-use comrak::nodes::{AstNode, NodeCode, NodeCodeBlock, NodeValue};
+use comrak::nodes::{
+    AstNode, NodeCode, NodeCodeBlock, NodeHeading, NodeList, NodeValue,
+};
 use skia_safe::{
     font_style::{Slant as SkSlant, Weight as SkWeight, Width as SkWidth},
     textlayout::{
@@ -13,7 +15,7 @@ use skia_safe::{
 
 use crate::{
     nvim::nvim_highlight_into_text_style,
-    widgets::{widget::Widget, Column, RichText},
+    widgets::{widget::Widget, Column, RichText, Row},
 };
 
 use super::codeblock::{get_all_captures, HighlightMarkerType};
@@ -45,6 +47,19 @@ impl BlockContext {
         }
     }
 
+    fn new_from_other(
+        other: &mut Self, font_collection: &FontCollection,
+    ) -> Self {
+        let paragraph_style = other.last_paragraph.get_paragraph_style();
+        let mut paragraph_builder =
+            ParagraphBuilder::new(&paragraph_style, font_collection);
+        paragraph_builder.push_style(&other.last_paragraph.peek_style());
+        Self {
+            block_widgets: Vec::new(),
+            last_paragraph: paragraph_builder,
+        }
+    }
+
     fn push(&mut self, w: Rc<dyn Widget>) {
         self.block_widgets.push(w);
     }
@@ -57,6 +72,7 @@ impl BlockContext {
 
     fn pack_content(&mut self) -> anyhow::Result<Option<Rc<dyn Widget>>> {
         let paragraph = self.last_paragraph.build();
+        // TODO(hawtian): clear text
         Ok(Some(Rc::new(RichText::new_with_paragraph(paragraph))))
     }
 }
@@ -182,34 +198,38 @@ static HEADING_FONT_SIZES: [f32; 3] = [2.0, 1.5, 1.2];
 
 /// **Block**
 impl<'c, 'f> Converter<'c, 'f> {
-    // fn visit_block_node<'a>(
-    //     &mut self, node: &'a AstNode<'a>,
-    // ) -> anyhow::Result<Rc<dyn Widget>> {
-    //     let value = &node.data.borrow().value;
-    //     assert!(value.block());
-    //     match value {
-    //         NodeValue::Document => self.visit_virtual_block(
-    //             node,
-    //             VirtialBlockWrapper::Column,
-    //             None,
-    //         ),
-    //         NodeValue::FrontMatter(_) => todo!(),
-    //         NodeValue::BlockQuote => todo!(),
-    //         NodeValue::List(node_list) => self.visit_list(node, node_list),
-    //         NodeValue::Item(node_list) => self.visit_list_item(node, node_list),
-    //         NodeValue::CodeBlock(codeblock) => self.visit_code_block(codeblock),
-    //         NodeValue::Paragraph => self.visit_virtual_block(
-    //             node,
-    //             VirtialBlockWrapper::Column,
-    //             None,
-    //         ),
-    //         NodeValue::Heading(heading) => self.visit_heading(node, heading),
-    //         NodeValue::ThematicBreak => {
-    //             Ok(Rc::new(Bar::new().height(LengthPercentage::Length(2.))))
-    //         }
-    //         _ => bail!("Unsupported block node: {:?}", value),
-    //     }
-    // }
+    fn visit_block_node<'a>(
+        &mut self, node: &'a AstNode<'a>, block: Option<&RefCell<BlockContext>>,
+    ) -> anyhow::Result<Rc<dyn Widget>> {
+        let value = &node.data.borrow().value;
+        assert!(value.block());
+        match value {
+            NodeValue::Document => self.visit_block_common(
+                node,
+                VirtialBlockWrapper::Column,
+                block,
+            ),
+            NodeValue::FrontMatter(_) => todo!(),
+            NodeValue::BlockQuote => todo!(),
+            NodeValue::List(node_list) => {
+                self.visit_list(node, node_list, block)
+            }
+            NodeValue::Item(node_list) => {
+                self.visit_list_item(node, node_list, block)
+            }
+            NodeValue::CodeBlock(codeblock) => self.visit_code_block(codeblock),
+            NodeValue::Paragraph => self.visit_block_common(
+                node,
+                VirtialBlockWrapper::Column,
+                block,
+            ),
+            NodeValue::Heading(heading) => self.visit_heading(node, heading),
+            // NodeValue::ThematicBreak => {
+            //     Ok(Rc::new(Bar::new().height(LengthPercentage::Length(2.))))
+            // }
+            _ => bail!("Unsupported block node: {:?}", value),
+        }
+    }
 
     fn visit_code_block(
         &mut self, codeblock: &NodeCodeBlock,
@@ -266,93 +286,121 @@ impl<'c, 'f> Converter<'c, 'f> {
         Ok(block.pack_content()?.unwrap())
     }
 
-    //
-    // fn visit_heading<'a>(
-    //     &mut self, node: &'a AstNode<'a>, heading: &NodeHeading,
-    // ) -> anyhow::Result<Rc<dyn Widget>> {
-    //     let mut props = MarkupProperties::new();
-    //     if heading.level <= 3 {
-    //         props.insert(
-    //             "font_size".into(),
-    //             HEADING_FONT_SIZES[(heading.level as usize) - 1].into(),
-    //         );
-    //     }
-    //     self.visit_virtual_block(node, VirtialBlockWrapper::Row, Some(props))
-    // }
-    //
-    // fn visit_list<'a>(
-    //     &mut self, node: &'a AstNode<'a>, node_list: &NodeList,
-    // ) -> anyhow::Result<Rc<dyn Widget>> {
-    //     let mut lines: Vec<Rc<dyn Widget>> = Vec::new();
-    //     for c in node.children() {
-    //         let w = self.visit_node(c)?;
-    //         lines.push(w);
-    //     }
-    //     Ok(Rc::new(Column::new(lines)))
-    // }
-    //
-    // fn visit_list_item<'a>(
-    //     &mut self, node: &'a AstNode<'a>, node_list: &NodeList,
-    // ) -> anyhow::Result<Rc<dyn Widget>> {
-    //     let mut block = BlockContext::new();
-    //     let marker = match node_list.list_type {
-    //         comrak::nodes::ListType::Bullet => {
-    //             format!("{} ", node_list.bullet_char as char)
-    //         }
-    //         comrak::nodes::ListType::Ordered => {
-    //             let start = node_list.start;
-    //             let offset = node_list.marker_offset;
-    //             let delimitor = match node_list.delimiter {
-    //                 comrak::nodes::ListDelimType::Period => ". ",
-    //                 comrak::nodes::ListDelimType::Paren => ") ",
-    //             };
-    //             format!("{}{}", start + offset, delimitor)
-    //         }
-    //     };
-    //     block.block_widgets.push(Rc::new(MarkupParagraph::new(
-    //         self.stack.wrap_text_owned(marker)?,
-    //     )));
-    //     for c in node.children() {
-    //         if c.data.borrow().value.block() {
-    //             let w = self.visit_block_node(c)?;
-    //             block.push(w);
-    //         } else {
-    //             self.visit_inline_node(c, &mut block)?;
-    //             let remaining = self.pack_markup_line()?;
-    //             block.push_or(remaining);
-    //         }
-    //     }
-    //     Ok(Rc::new(Row::new(block.block_widgets)))
-    // }
-    //
-    // fn visit_virtual_block<'a>(
-    //     &mut self, node: &'a AstNode<'a>, wrapper: VirtialBlockWrapper,
-    //     props: Option<MarkupProperties>,
-    // ) -> anyhow::Result<Rc<dyn Widget>> {
-    //     let mut block = BlockContext::new();
-    //     if let Some(props) = &props {
-    //         self.push_span(MarkupSpan::new_with_properties(props.clone()))?;
-    //     }
-    //     // visit childrens
-    //     for child in node.children() {
-    //         if child.data.borrow().value.block() {
-    //             let w = self.visit_block_node(child)?;
-    //             block.push(w);
-    //         } else {
-    //             self.visit_inline_node(child, &mut block)?;
-    //             let remaining = self.pack_markup_line()?;
-    //             block.push_or(remaining);
-    //         }
-    //     }
-    //     if props.is_some() {
-    //         self.pop_span()?;
-    //     }
-    //     let ret: Rc<dyn Widget> = match wrapper {
-    //         VirtialBlockWrapper::Column => {
-    //             Rc::new(Column::new(block.block_widgets))
-    //         }
-    //         VirtialBlockWrapper::Row => Rc::new(Row::new(block.block_widgets)),
-    //     };
-    //     Ok(ret)
-    // }
+    fn visit_heading<'a>(
+        &mut self, node: &'a AstNode<'a>, heading: &NodeHeading,
+    ) -> anyhow::Result<Rc<dyn Widget>> {
+        let mut scale = 1.0;
+        if heading.level <= 3 {
+            scale = HEADING_FONT_SIZES[(heading.level as usize) - 1];
+        }
+
+        let mut block =
+            BlockContext::new(&Default::default(), self.font_collection);
+        let mut style = block.last_paragraph.peek_style();
+        let base_font_size = block
+            .last_paragraph
+            .get_paragraph_style()
+            .text_style()
+            .font_size();
+        style.set_font_families(&[&self.opts.mono_font]);
+        style.set_font_size(base_font_size * scale);
+        block.last_paragraph.push_style(&style);
+        for child in node.children() {
+            assert!(!child.data.borrow().value.block());
+            self.visit_inline_node(child, &mut block)?;
+        }
+        Ok(block.pack_content()?.unwrap())
+    }
+
+    fn visit_list<'a>(
+        &mut self, node: &'a AstNode<'a>, _node_list: &NodeList,
+        block: Option<&RefCell<BlockContext>>,
+    ) -> anyhow::Result<Rc<dyn Widget>> {
+        let mut lines: Vec<Rc<dyn Widget>> = Vec::new();
+        for c in node.children() {
+            let w = self.visit_block_node(c, block)?;
+            lines.push(w);
+        }
+        Ok(Rc::new(Column::new_with_children(lines)))
+    }
+
+    fn visit_list_item<'a>(
+        &mut self, node: &'a AstNode<'a>, node_list: &NodeList,
+        block: Option<&RefCell<BlockContext>>,
+    ) -> anyhow::Result<Rc<dyn Widget>> {
+        let mut block = match block {
+            Some(block) => BlockContext::new_from_other(
+                &mut block.borrow_mut(),
+                self.font_collection,
+            ),
+            None => {
+                BlockContext::new(&Default::default(), self.font_collection)
+            }
+        };
+        let marker = match node_list.list_type {
+            comrak::nodes::ListType::Bullet => {
+                format!("{} ", node_list.bullet_char as char)
+            }
+            comrak::nodes::ListType::Ordered => {
+                let start = node_list.start;
+                let offset = node_list.marker_offset;
+                let delimitor = match node_list.delimiter {
+                    comrak::nodes::ListDelimType::Period => ". ",
+                    comrak::nodes::ListDelimType::Paren => ") ",
+                };
+                format!("{}{}", start + offset, delimitor)
+            }
+        };
+        block.last_paragraph.add_text(&marker);
+        let block = RefCell::new(block);
+        for c in node.children() {
+            if c.data.borrow().value.block() {
+                let w = self.visit_block_node(c, Some(&block))?;
+                block.borrow_mut().push(w);
+            } else {
+                self.visit_inline_node(c, &mut block.borrow_mut())?;
+                let content = block.borrow_mut().pack_content()?;
+                block.borrow_mut().push_or(content);
+            }
+        }
+        let block = block.into_inner();
+        Ok(Rc::new(Column::new_with_children(block.block_widgets)))
+    }
+
+    fn visit_block_common<'a>(
+        &mut self, node: &'a AstNode<'a>, wrapper: VirtialBlockWrapper,
+        block: Option<&RefCell<BlockContext>>,
+    ) -> anyhow::Result<Rc<dyn Widget>> {
+        let block = match block {
+            Some(block) => BlockContext::new_from_other(
+                &mut block.borrow_mut(),
+                self.font_collection,
+            ),
+            None => {
+                BlockContext::new(&Default::default(), self.font_collection)
+            }
+        };
+        let block = RefCell::new(block);
+        // visit childrens
+        for child in node.children() {
+            if child.data.borrow().value.block() {
+                let w = self.visit_block_node(child, Some(&block))?;
+                block.borrow_mut().push(w);
+            } else {
+                self.visit_inline_node(child, &mut block.borrow_mut())?;
+                let content = block.borrow_mut().pack_content()?;
+                block.borrow_mut().push_or(content);
+            }
+        }
+        let block = block.into_inner();
+        let ret: Rc<dyn Widget> = match wrapper {
+            VirtialBlockWrapper::Column => {
+                Rc::new(Column::new_with_children(block.block_widgets))
+            }
+            VirtialBlockWrapper::Row => {
+                Rc::new(Row::new_with_children(block.block_widgets))
+            }
+        };
+        Ok(ret)
+    }
 }
