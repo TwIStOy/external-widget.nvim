@@ -3,20 +3,17 @@ name = "ext-widget-core"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib"]
+# [target.x86_64-apple-darwin]
+# rustflags = [
+#   "-C", "link-arg=-undefined",
+#   "-C", "link-arg=dynamic_lookup",
+# ]
 
-[target.x86_64-apple-darwin]
-rustflags = [
-  "-C", "link-arg=-undefined",
-  "-C", "link-arg=dynamic_lookup",
-]
-
-[target.aarch64-apple-darwin]
-rustflags = [
-  "-C", "link-arg=-undefined",
-  "-C", "link-arg=dynamic_lookup",
-]
+# [target.aarch64-apple-darwin]
+# rustflags = [
+#   "-C", "link-arg=-undefined",
+#   "-C", "link-arg=dynamic_lookup",
+# ]
 
 [dependencies]
 tracing = { workspace = true }
@@ -25,7 +22,12 @@ serde = { workspace = true }
 taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "440843c700455363383e0a4fc365a15deebd4717", features = [
   "serde",
 ] }
-nvim-oxi = { version = "0.4.1", features = ["neovim-nightly", "test", "mlua", "libuv"] }
+nvim-oxi = { version = "0.4.1", features = [
+  "neovim-nightly",
+  "test",
+  "mlua",
+  "libuv",
+] }
 thiserror = "1.0.51"
 anyhow = "1.0.76"
 skia-safe = { version = "0.69.0", features = [
@@ -43,4 +45,3 @@ regex = "1.10.2"
 
 [dev-dependencies]
 all_asserts = "2.3.1"
-

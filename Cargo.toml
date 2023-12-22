@@ -1,6 +1,13 @@
 [workspace]
 resolver = "2"
-members = ["crates/bin", "crates/core", "crates/widgets", "crates/ext-widget-core"]
+members = [
+  "crates/bin",
+  "crates/core",
+  "crates/widgets",
+  "crates/ext-widget-core",
+]
+
+exclude = ["tests"]
 
 [workspace.dependencies]
 external-widget-core = { path = "crates/core" }

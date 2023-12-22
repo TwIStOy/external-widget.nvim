@@ -4,5 +4,5 @@ build:
 release:
   cargo build --all-targets --release
 
-test: build
-  cargo test --all-targets -- --nocapture
+test:
+  cd tests && cargo build && cargo test -- --nocapture && cd ..

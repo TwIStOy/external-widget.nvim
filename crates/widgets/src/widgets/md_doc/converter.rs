@@ -265,7 +265,6 @@ impl<'c> Converter<'c> {
                     block.push_or(line);
                 }
                 _ => {
-                    let ch = ch;
                     self.pending_markup_line
                         .push_str(markup_escape_text(&ch.to_string()).as_str());
                 }
