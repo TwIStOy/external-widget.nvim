@@ -14,3 +14,16 @@ where
 
     Ok(None)
 }
+
+#[cfg(test)]
+mod tests {
+    use nvim_oxi as oxi;
+
+    #[oxi::test]
+    fn test_find_parser() {
+        let p = super::find_file_in_runtime_path("parser/lua.so");
+        println!("{:?}", p);
+        assert!(p.is_ok());
+        assert!(p.unwrap().is_some());
+    }
+}

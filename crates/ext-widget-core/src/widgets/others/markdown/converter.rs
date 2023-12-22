@@ -15,7 +15,10 @@ use skia_safe::{
 
 use crate::{
     nvim::nvim_highlight_into_text_style,
-    widgets::{widget::Widget, Column, RichText, Row},
+    painting::{
+        BoxBorder, BoxConstraints, BoxDecoration, Color, FlexibleLengthAuto,
+    },
+    widgets::{widget::Widget, BoxOptions, Column, Container, RichText, Row},
 };
 
 use super::codeblock::{get_all_captures, HighlightMarkerType};
@@ -224,9 +227,23 @@ impl<'c, 'f> Converter<'c, 'f> {
                 block,
             ),
             NodeValue::Heading(heading) => self.visit_heading(node, heading),
-            // NodeValue::ThematicBreak => {
-            //     Ok(Rc::new(Bar::new().height(LengthPercentage::Length(2.))))
-            // }
+            NodeValue::ThematicBreak => {
+                let hl = nvim_oxi::api::get_hl_by_name("Normal", true)?;
+                Ok(Rc::new(Container::new(
+                    BoxDecoration {
+                        color: Color::new(hl.foreground.unwrap_or(0)),
+                        border: BoxBorder::NONE,
+                    },
+                    BoxOptions {
+                        constraints: BoxConstraints {
+                            min_height: FlexibleLengthAuto::Fixed(2.0),
+                            max_height: FlexibleLengthAuto::Fixed(2.0),
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
+                )))
+            }
             _ => bail!("Unsupported block node: {:?}", value),
         }
     }

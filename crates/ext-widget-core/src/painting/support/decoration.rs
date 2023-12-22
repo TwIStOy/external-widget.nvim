@@ -21,3 +21,11 @@ pub struct BoxBorder {
     /// The radius of the rounded corners of the box.
     pub radius: FlexibleLength,
 }
+
+impl BoxBorder {
+    pub const NONE: Self = Self {
+        color: Color::new(0),
+        width: 0.0,
+        radius: FlexibleLength::Fixed(0.0),
+    };
+}

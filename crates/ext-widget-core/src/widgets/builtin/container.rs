@@ -18,6 +18,17 @@ pub struct Container {
     pub options: BoxOptions,
 }
 
+impl Container {
+    pub fn new(decoration: BoxDecoration, options: BoxOptions) -> Self {
+        Self {
+            key: WidgetKey::next(),
+            child: None,
+            decoration,
+            options,
+        }
+    }
+}
+
 impl LayoutElement for Container {
     fn style(&self) -> BoxOptions {
         self.options.clone()

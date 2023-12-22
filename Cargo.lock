@@ -1168,10 +1168,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "mini-internal"
+version = "0.1.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4bb752642ceeaad440a788ea0ee23c0317117068f49dc1f25fd23b26146a225d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.41",
+]
+
+[[package]]
 name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+
+[[package]]
+name = "miniserde"
+version = "0.1.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c007c51ce98f5f76964762e92fe98967f9fa65943415fd0d0dc6b6bf6bd3da0d"
+dependencies = [
+ "itoa",
+ "mini-internal",
+ "ryu",
+]
 
 [[package]]
 name = "miniz_oxide"
@@ -1260,6 +1282,7 @@ version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "702ca24e05d5b84678a72580c12288fee7f699395e70516df555ef0477fb9d47"
 dependencies = [
+ "miniserde",
  "oxi-api",
  "oxi-libuv",
  "oxi-luajit",

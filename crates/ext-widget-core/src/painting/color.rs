@@ -17,7 +17,7 @@ pub struct Color {
 
 impl Color {
     /// Construct a color from the 24-bit or 32-bit integer.
-    pub fn new(value: u32) -> Self {
+    pub const fn new(value: u32) -> Self {
         if value <= 0xffffff {
             // 24-bit, no alpha in this
             Self {
