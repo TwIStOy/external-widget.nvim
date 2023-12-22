@@ -565,12 +565,17 @@ dependencies = [
  "anyhow",
  "base64",
  "comrak",
+ "libloading 0.8.1",
  "nvim-oxi",
+ "once_cell",
+ "parking_lot",
+ "regex",
  "serde",
  "skia-safe",
  "taffy",
  "thiserror",
  "tracing",
+ "tree-sitter",
 ]
 
 [[package]]
