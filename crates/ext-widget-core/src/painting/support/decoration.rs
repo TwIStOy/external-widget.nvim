@@ -1,4 +1,6 @@
-use crate::painting::Color;
+use thiserror::Error;
+
+use crate::painting::{Color, ParseColorError};
 
 use super::FlexibleLength;
 
@@ -29,3 +31,45 @@ impl BoxBorder {
         radius: FlexibleLength::Fixed(0.0),
     };
 }
+
+#[derive(Error, Debug)]
+pub enum ParseBoxBorderError {
+    #[error("invalid border color: {0:?}")]
+    Color(#[from] ParseColorError),
+    #[error("invalid border radius")]
+    Radius,
+    #[error("invalid border width")]
+    Width,
+}
+
+// impl TryFrom<rmpv::Value> for BoxBorder {
+//     type Error = ParseBoxBorderError;
+//     fn try_from(value: rmpv::Value) -> Result<Self, Self::Error> {
+//         let mut color = Color::new(0);
+//         let mut width = 0.0;
+//         let mut radius = 0.0;
+//         if let rmpv::Value::Map(map) = value {
+//             for (k, v) in map.iter() {
+//                 if let rmpv::Value::String(s) = k {
+//                     match s.as_str().unwrap() {
+//                         "color" => {
+//                             color = v.try_into();
+//                         }
+//                         "width" => {
+//                             width = v.as_f64().unwrap_or(0.0) as f32;
+//                         }
+//                         "radius" => {
+//                             radius = v.as_f64().unwrap_or(0.0) as f32;
+//                         }
+//                         _ => {}
+//                     }
+//                 }
+//             }
+//         }
+//         Self {
+//             color,
+//             width,
+//             radius: FlexibleLength::Fixed(radius),
+//         }
+//     }
+// }

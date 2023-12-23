@@ -54,6 +54,51 @@ impl Color {
         }
     }
 
+    pub fn new_from_str<T>(s: T) -> Result<Self, ParseColorError>
+    where
+        T: AsRef<str>,
+    {
+        if let Some(v) = s.as_ref().strip_prefix('#') {
+            let r = u8::from_str_radix(&v[0..2], 16)?;
+            let g = u8::from_str_radix(&v[2..4], 16)?;
+            let b = u8::from_str_radix(&v[4..6], 16)?;
+            let a = if v.len() == 6 {
+                // 24-bit, no alpha in this
+                0xff
+            } else {
+                u8::from_str_radix(&v[6..8], 16)?
+            };
+            Ok(Color {
+                red: r,
+                green: g,
+                blue: b,
+                alpha: a,
+            })
+        } else {
+            match s.as_ref() {
+                "black" => Ok(Color::new(0x000000)),
+                "silver" => Ok(Color::new(0xc0c0c0)),
+                "gray" => Ok(Color::new(0x808080)),
+                "white" => Ok(Color::new(0xffffff)),
+                "maroon" => Ok(Color::new(0x800000)),
+                "red" => Ok(Color::new(0xff0000)),
+                "purple" => Ok(Color::new(0x800080)),
+                "fuchsia" => Ok(Color::new(0xff00ff)),
+                "green" => Ok(Color::new(0x008000)),
+                "lime" => Ok(Color::new(0x00ff00)),
+                "olive" => Ok(Color::new(0x808000)),
+                "yellow" => Ok(Color::new(0xffff00)),
+                "navy" => Ok(Color::new(0x000080)),
+                "blue" => Ok(Color::new(0x0000ff)),
+                "teal" => Ok(Color::new(0x008080)),
+                "aqua" => Ok(Color::new(0x00ffff)),
+                _ => Err(ParseColorError::InvalidColorFormat(
+                    s.as_ref().to_string(),
+                )),
+            }
+        }
+    }
+
     /// The alpha channel of this color as a double. In [0, 1]
     pub fn opacity(&self) -> f32 {
         self.alpha as f32 / 255.0
@@ -98,25 +143,7 @@ impl TryFrom<Object> for Color {
             ObjectKind::String => {
                 let _v = unsafe { value.into_string_unchecked() };
                 let v = _v.to_string_lossy();
-                if let Some(v) = v.strip_prefix('#') {
-                    let r = u8::from_str_radix(&v[0..2], 16)?;
-                    let g = u8::from_str_radix(&v[2..4], 16)?;
-                    let b = u8::from_str_radix(&v[4..6], 16)?;
-                    let a = if v.len() == 6 {
-                        // 24-bit, no alpha in this
-                        0xff
-                    } else {
-                        u8::from_str_radix(&v[6..8], 16)?
-                    };
-                    Ok(Color {
-                        red: r,
-                        green: g,
-                        blue: b,
-                        alpha: a,
-                    })
-                } else {
-                    Err(ParseColorError::InvalidColorFormat(v.to_string()))
-                }
+                Self::new_from_str(v)
             }
             _ => Err(ParseColorError::Type(value.kind())),
         }
@@ -126,5 +153,29 @@ impl TryFrom<Object> for Color {
 impl From<Color> for skia_safe::Color {
     fn from(value: Color) -> Self {
         Self::from_argb(value.alpha, value.red, value.green, value.blue)
+    }
+}
+
+impl TryFrom<rmpv::Value> for Color {
+    type Error = ParseColorError;
+
+    fn try_from(value: rmpv::Value) -> Result<Self, Self::Error> {
+        match value {
+            rmpv::Value::Nil => todo!(),
+            rmpv::Value::Boolean(_) => todo!(),
+            rmpv::Value::Integer(_) => todo!(),
+            rmpv::Value::F32(_) => todo!(),
+            rmpv::Value::F64(_) => todo!(),
+            rmpv::Value::String(s) => match s.as_str() {
+                Some(s) => Self::new_from_str(s),
+                None => {
+                    Err(ParseColorError::InvalidColorFormat(s.to_string()))?
+                }
+            },
+            rmpv::Value::Binary(_) => todo!(),
+            rmpv::Value::Array(_) => todo!(),
+            rmpv::Value::Map(_) => todo!(),
+            rmpv::Value::Ext(_, _) => todo!(),
+        }
     }
 }
