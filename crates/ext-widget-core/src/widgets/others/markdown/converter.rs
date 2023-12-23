@@ -201,11 +201,11 @@ impl<'o, 'f> Converter<'o, 'f> {
         &mut self, c: &NodeCode, block: &mut BlockContext,
     ) -> anyhow::Result<()> {
         let mut style = block.last_paragraph.peek_style();
-        if let Ok(hl) =
-            nvim_oxi::api::get_hl_by_name("@text.literal.markdown_inline", true)
-        {
-            nvim_highlight_into_text_style(&hl, &mut style);
-        }
+        // if let Ok(hl) =
+        //     nvim_oxi::api::get_hl_by_name("@text.literal.markdown_inline", true)
+        // {
+        //     nvim_highlight_into_text_style(&hl, &mut style);
+        // }
         style.set_font_families(&[&self.opts.mono_font]);
 
         block.last_paragraph.push_style(&style);
@@ -258,11 +258,12 @@ impl<'c, 'f> Converter<'c, 'f> {
             NodeValue::Heading(heading) => self.visit_heading(node, heading),
             NodeValue::ThematicBreak => {
                 trace!("visit_block_node: ThematicBreak");
-                let hl = nvim_oxi::api::get_hl_by_name("Normal", true)?;
+                // let hl = nvim_oxi::api::get_hl_by_name("Normal", true)?;
                 Ok(Rc::new(Container::new(
                     BoxDecoration {
-                        color: Color::new(hl.foreground.unwrap_or(0)),
+                        // color: Color::new(hl.foreground.unwrap_or(0)),
                         border: BoxBorder::NONE,
+                        ..Default::default()
                     },
                     BoxOptions {
                         constraints: BoxConstraints {
@@ -300,10 +301,10 @@ impl<'c, 'f> Converter<'c, 'f> {
                 let marker = &highlights[m];
                 match marker.kind {
                     HighlightMarkerType::Start => {
-                        let hl =
-                            nvim_oxi::api::get_hl_by_name(&marker.group, true)?;
+                        // let hl =
+                        //     nvim_oxi::api::get_hl_by_name(&marker.group, true)?;
                         let mut style = block.last_paragraph.peek_style();
-                        nvim_highlight_into_text_style(&hl, &mut style);
+                        // nvim_highlight_into_text_style(&hl, &mut style);
                         block.last_paragraph.push_style(&style);
                     }
                     HighlightMarkerType::End => {
@@ -319,10 +320,10 @@ impl<'c, 'f> Converter<'c, 'f> {
             let marker = &highlights[m];
             match marker.kind {
                 HighlightMarkerType::Start => {
-                    let hl =
-                        nvim_oxi::api::get_hl_by_name(&marker.group, true)?;
+                    // let hl =
+                    //     nvim_oxi::api::get_hl_by_name(&marker.group, true)?;
                     let mut style = block.last_paragraph.peek_style();
-                    nvim_highlight_into_text_style(&hl, &mut style);
+                    // nvim_highlight_into_text_style(&hl, &mut style);
                     block.last_paragraph.push_style(&style);
                 }
                 HighlightMarkerType::End => {
@@ -554,7 +555,7 @@ Parameters:
 public: int main(int argc, const char *argv)
 ```"#;
 
-    #[nvim_oxi::test]
+    // #[nvim_oxi::test]
     fn test_doc() {
         install_logger().unwrap();
 

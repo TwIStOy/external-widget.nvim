@@ -1,5 +1,6 @@
 mod highlight;
 mod rtp;
+mod session;
 mod treesitter;
 
 pub use highlight::nvim_highlight_into_text_style;

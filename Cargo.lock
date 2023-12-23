@@ -141,26 +141,6 @@ dependencies = [
 
 [[package]]
 name = "bindgen"
-version = "0.68.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "726e4313eb6ec35d2730258ad4e15b547ee75d6afaa1361a922e78e59b7d8078"
-dependencies = [
- "bitflags 2.4.1",
- "cexpr",
- "clang-sys",
- "lazy_static",
- "lazycell",
- "peeking_take_while",
- "proc-macro2",
- "quote",
- "regex",
- "rustc-hash",
- "shlex",
- "syn 2.0.41",
-]
-
-[[package]]
-name = "bindgen"
 version = "0.69.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ffcebc3849946a7170a05992aac39da343a90676ab392c51a4280981d6379c2"
@@ -214,16 +194,6 @@ name = "bitflags"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "327762f6e5a765692301e5bb513e0d9fef63be86bbc14528052b1cd3e6f03e07"
-
-[[package]]
-name = "bstr"
-version = "1.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c2f7349907b712260e64b0afe2f84692af14a454be26187d9df565c7f69266a"
-dependencies = [
- "memchr",
- "serde",
-]
 
 [[package]]
 name = "bumpalo"
@@ -582,8 +552,9 @@ dependencies = [
  "anyhow",
  "base64",
  "comrak",
+ "futures 0.3.29",
  "libloading 0.8.1",
- "nvim-oxi",
+ "nvim-rs",
  "once_cell",
  "parking_lot",
  "regex",
@@ -592,6 +563,8 @@ dependencies = [
  "skia-safe",
  "taffy",
  "thiserror",
+ "tokio",
+ "tokio-util",
  "tracing",
  "tracing-log",
  "tracing-subscriber",
@@ -1116,17 +1089,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libuv-sys2"
-version = "1.47.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e904373ad634b6a3b37af8d328d69902d10201425521c7d65fb07578ee0015ad"
-dependencies = [
- "bindgen 0.68.1",
- "cc",
- "pkg-config",
-]
-
-[[package]]
 name = "line-wrap"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1188,32 +1150,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "mini-internal"
-version = "0.1.34"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bb752642ceeaad440a788ea0ee23c0317117068f49dc1f25fd23b26146a225d"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.41",
-]
-
-[[package]]
 name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
-
-[[package]]
-name = "miniserde"
-version = "0.1.34"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c007c51ce98f5f76964762e92fe98967f9fa65943415fd0d0dc6b6bf6bd3da0d"
-dependencies = [
- "itoa",
- "mini-internal",
- "ryu",
-]
 
 [[package]]
 name = "miniz_oxide"
@@ -1234,30 +1174,6 @@ dependencies = [
  "libc",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys 0.48.0",
-]
-
-[[package]]
-name = "mlua"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c3a7a7ff4481ec91b951a733390211a8ace1caba57266ccb5f4d4966704e560"
-dependencies = [
- "bstr",
- "mlua-sys",
- "num-traits",
- "once_cell",
- "rustc-hash",
-]
-
-[[package]]
-name = "mlua-sys"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ec8b54eddb76093069cce9eeffb4c7b3a1a0fe66962d7bd44c4867928149ca3"
-dependencies = [
- "cc",
- "cfg-if",
- "pkg-config",
 ]
 
 [[package]]
@@ -1321,22 +1237,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nvim-oxi"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "702ca24e05d5b84678a72580c12288fee7f699395e70516df555ef0477fb9d47"
-dependencies = [
- "miniserde",
- "mlua",
- "oxi-api",
- "oxi-libuv",
- "oxi-luajit",
- "oxi-macros",
- "oxi-types",
- "thiserror",
-]
-
-[[package]]
 name = "nvim-rs"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1394,65 +1294,6 @@ name = "overload"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
-
-[[package]]
-name = "oxi-api"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cea77870bc06c770feb3b749cce8e5ef436549d3f7102eea565b362524dc1284"
-dependencies = [
- "oxi-luajit",
- "oxi-macros",
- "oxi-types",
- "serde",
- "serde_repr",
- "thiserror",
-]
-
-[[package]]
-name = "oxi-libuv"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb48e8c701ec2b4d49f8e99921e5183f44a3b19b96e0ad584b687b5cb2e9dd6c"
-dependencies = [
- "libuv-sys2",
- "once_cell",
- "oxi-luajit",
- "thiserror",
-]
-
-[[package]]
-name = "oxi-luajit"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "266dcbaccc994593300177e1aed3f37bcc95038285fbcecd9f7ca0986a39b509"
-dependencies = [
- "once_cell",
- "thiserror",
-]
-
-[[package]]
-name = "oxi-macros"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "052f6ff629997bf4eebcec7a43c504a340c920c03e694edc89a94d34dc667516"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.41",
-]
-
-[[package]]
-name = "oxi-types"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd240d7d535d174e653df2900c58ec1ac5de0aac407eb9dcd4fccaef28a98e82"
-dependencies = [
- "libc",
- "oxi-luajit",
- "serde",
- "thiserror",
-]
 
 [[package]]
 name = "pango"
@@ -1990,17 +1831,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_repr"
-version = "0.1.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3081f5ffbb02284dda55132aa26daecedd7372a42417bbbab6f14ab7d6bb9145"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.41",
-]
-
-[[package]]
 name = "serde_spanned"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2051,7 +1881,7 @@ version = "0.69.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b4b5af96ee7d895763fa606f4531fddfb11de034217edd0c7beb9ea181efe5b"
 dependencies = [
- "bindgen 0.69.1",
+ "bindgen",
  "cc",
  "flate2",
  "heck",
@@ -2237,15 +2067,6 @@ checksum = "21bebf2b7c9e0a515f6e0f8c51dc0f8e4696391e6f1ff30379559f8365fb0df7"
 dependencies = [
  "rustix",
  "windows-sys 0.48.0",
-]
-
-[[package]]
-name = "tests"
-version = "0.1.0"
-dependencies = [
- "all_asserts",
- "ext-widget-core",
- "nvim-oxi",
 ]
 
 [[package]]

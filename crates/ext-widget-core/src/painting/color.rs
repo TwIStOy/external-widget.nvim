@@ -1,9 +1,10 @@
 use std::fmt::{Debug, Display};
 
-use nvim_oxi::{Object, ObjectKind};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(try_from = "ColorRepr", into = "ColorRepr")]
 pub struct Color {
     // range: [0, 255]
     pub red: u8,
@@ -124,30 +125,11 @@ impl Debug for Color {
 #[derive(Debug, Error)]
 pub enum ParseColorError {
     #[error("invalid type, expected string or integer, got {0:?}")]
-    Type(ObjectKind),
+    Type(String),
     #[error("invalid color: {0:?}")]
     InvalidColorPart(#[from] std::num::ParseIntError),
     #[error("invalid color: {0:?}")]
     InvalidColorFormat(String),
-}
-
-impl TryFrom<Object> for Color {
-    type Error = ParseColorError;
-
-    fn try_from(value: Object) -> Result<Self, Self::Error> {
-        match value.kind() {
-            ObjectKind::Integer => {
-                let v = unsafe { value.as_integer_unchecked() };
-                Ok(Color::new(v as u32))
-            }
-            ObjectKind::String => {
-                let _v = unsafe { value.into_string_unchecked() };
-                let v = _v.to_string_lossy();
-                Self::new_from_str(v)
-            }
-            _ => Err(ParseColorError::Type(value.kind())),
-        }
-    }
 }
 
 impl From<Color> for skia_safe::Color {
@@ -156,26 +138,36 @@ impl From<Color> for skia_safe::Color {
     }
 }
 
-impl TryFrom<rmpv::Value> for Color {
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+enum ColorRepr {
+    /// 24-bit or 32-bit integer
+    Integer(u32),
+    /// String
+    String(String),
+}
+
+impl TryFrom<ColorRepr> for Color {
     type Error = ParseColorError;
 
-    fn try_from(value: rmpv::Value) -> Result<Self, Self::Error> {
+    fn try_from(value: ColorRepr) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&ColorRepr> for Color {
+    type Error = ParseColorError;
+
+    fn try_from(value: &ColorRepr) -> Result<Self, Self::Error> {
         match value {
-            rmpv::Value::Nil => todo!(),
-            rmpv::Value::Boolean(_) => todo!(),
-            rmpv::Value::Integer(_) => todo!(),
-            rmpv::Value::F32(_) => todo!(),
-            rmpv::Value::F64(_) => todo!(),
-            rmpv::Value::String(s) => match s.as_str() {
-                Some(s) => Self::new_from_str(s),
-                None => {
-                    Err(ParseColorError::InvalidColorFormat(s.to_string()))?
-                }
-            },
-            rmpv::Value::Binary(_) => todo!(),
-            rmpv::Value::Array(_) => todo!(),
-            rmpv::Value::Map(_) => todo!(),
-            rmpv::Value::Ext(_, _) => todo!(),
+            ColorRepr::Integer(i) => Ok(Color::new(*i)),
+            ColorRepr::String(s) => Self::new_from_str(s),
         }
+    }
+}
+
+impl From<Color> for ColorRepr {
+    fn from(value: Color) -> Self {
+        Self::String(value.to_string())
     }
 }

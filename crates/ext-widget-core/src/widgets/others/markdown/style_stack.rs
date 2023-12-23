@@ -1,4 +1,3 @@
-use nvim_oxi::api::types::HighlightInfos;
 use skia_safe::{
     font_style::{Slant as SkSlant, Weight as SkWeight, Width as SkWidth},
     textlayout::{TextDecoration, TextDecorationStyle, TextStyle},
