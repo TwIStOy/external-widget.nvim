@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use futures::AsyncWrite;
 use nvim_rs::Neovim;
 use tokio::{
@@ -15,12 +17,20 @@ use crate::{
 pub struct TermWriter {
     inner: BufWriter<File>,
     tmux: bool,
+    tty: String,
+}
+
+impl Debug for TermWriter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TermWriter")
+            .field("tmux", &self.tmux)
+            .field("tty", &self.tty)
+            .finish()
+    }
 }
 
 impl TermWriter {
-    pub async fn new<W>(
-        nvim: &Neovim<W>, session: &NeovimSession,
-    ) -> anyhow::Result<Self>
+    pub async fn new<W>(nvim: &Neovim<W>) -> anyhow::Result<Self>
     where
         W: AsyncWrite + Send + Unpin + 'static,
     {
@@ -28,16 +38,17 @@ impl TermWriter {
         let tty = if tmux {
             tmux_pane_tty().await?
         } else {
-            session.get_tty(nvim).await?
+            NeovimSession::get_tty(nvim).await?
         };
         info!("tty: {}", tty);
         let writer =
-            tokio::fs::OpenOptions::new().write(true).open(tty).await?;
+            tokio::fs::OpenOptions::new().write(true).open(&tty).await?;
         let writer = BufWriter::new(writer);
 
         Ok(Self {
             inner: writer,
             tmux,
+            tty,
         })
     }
 
@@ -49,6 +60,7 @@ impl TermWriter {
         Ok(Self {
             inner: writer,
             tmux,
+            tty: tty.to_string(),
         })
     }
 

@@ -26,17 +26,20 @@ pub async fn start_server(addr: &str) -> anyhow::Result<()> {
     loop {
         let (tcp, addr) = listener.accept().await.unwrap();
         info!("Accepted connection, {:?}, {:?}", tcp, addr);
-        create_neovim_from_tcp(tcp).await;
+        if let Err(e) = create_neovim_from_tcp(tcp).await {
+            error!("Error: '{}'", e);
+        }
     }
 }
 
 pub async fn start_parent() -> anyhow::Result<()> {
     let handler = NeovimHandler::new();
-    let (_neovim, io) = Neovim::<NvimWriter>::new(
+    let (neovim, io) = Neovim::<NvimWriter>::new(
         stdin().compat(),
         Box::new(stdout().compat_write()),
-        handler,
+        handler.clone(),
     );
+    handler.post_instance(&neovim).await?;
 
     if let Err(error) = io.await {
         if !error.is_channel_closed() {
@@ -47,14 +50,15 @@ pub async fn start_parent() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn create_neovim_from_tcp(tcp: TcpStream) {
+async fn create_neovim_from_tcp(tcp: TcpStream) -> anyhow::Result<()> {
     let handler = NeovimHandler::new();
     let (reader, writer) = split(tcp);
-    let (_neovim, io) = Neovim::<NvimWriter>::new(
+    let (neovim, io) = Neovim::<NvimWriter>::new(
         reader.compat(),
         Box::new(writer.compat_write()),
-        handler,
+        handler.clone(),
     );
+    handler.post_instance(&neovim).await?;
 
     tokio::spawn(async move {
         if let Err(error) = io.await {
@@ -63,4 +67,6 @@ async fn create_neovim_from_tcp(tcp: TcpStream) {
             }
         };
     });
+
+    Ok(())
 }

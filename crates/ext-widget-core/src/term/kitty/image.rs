@@ -7,12 +7,12 @@ use std::{
 use parking_lot::Mutex;
 use tracing::instrument;
 
-use crate::{
-    kitty::{
+use crate::term::{
+    proto::{
         delete_image, transmit_image, Action, ActionPut, Command, Placement,
         Quietness, ID,
     },
-    TermWriter,
+    writer::TermWriter,
 };
 
 static IMAGE_ID: AtomicU32 = AtomicU32::new(1);
@@ -89,8 +89,10 @@ impl Image {
         }
     }
 
-    #[instrument(skip(self))]
-    pub async fn transmit(self: &Arc<Self>) -> anyhow::Result<()> {
+    #[instrument(skip(self,))]
+    pub async fn transmit(
+        self: &Arc<Self>, writer: &mut TermWriter,
+    ) -> anyhow::Result<()> {
         {
             let mut transmitted = self.transmitted.lock();
             if *transmitted {
@@ -98,14 +100,14 @@ impl Image {
             }
             *transmitted = true;
         }
-        let mut writer = TermWriter::new().await?;
-        transmit_image(&self.buffer, &mut writer, ID(self.id)).await?;
+        transmit_image(&self.buffer, writer, ID(self.id)).await?;
         writer.flush().await
     }
 
     #[instrument(skip(self))]
-    pub async fn render_at(&self, x: u32, y: u32) -> anyhow::Result<()> {
-        let mut writer = TermWriter::new().await?;
+    pub async fn render_at(
+        &self, writer: &mut TermWriter, x: u32, y: u32,
+    ) -> anyhow::Result<()> {
         let mut should_transmit = false;
         {
             let mut transmitted = self.transmitted.lock();
@@ -115,7 +117,7 @@ impl Image {
             }
         }
         if should_transmit {
-            transmit_image(&self.buffer, &mut writer, ID(self.id)).await?;
+            transmit_image(&self.buffer, writer, ID(self.id)).await?;
             writer.flush().await?;
             tokio::time::sleep(std::time::Duration::from_millis(10)).await;
         }
@@ -131,14 +133,15 @@ impl Image {
             quietness: Quietness::SuppressAll,
             id: Some(ID(self.id)),
         };
-        cmd.send(None, &mut writer).await?;
+        cmd.send(None, writer).await?;
         writer.flush().await
     }
 
     #[instrument(skip(self))]
-    pub async fn delete_image(&self) -> anyhow::Result<()> {
-        let mut writer = TermWriter::new().await?;
-        delete_image(&mut writer, ID(self.id)).await?;
+    pub async fn delete_image(
+        &self, writer: &mut TermWriter,
+    ) -> anyhow::Result<()> {
+        delete_image(writer, ID(self.id)).await?;
         {
             let mut transmitted = self.transmitted.lock();
             *transmitted = false;

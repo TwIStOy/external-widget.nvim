@@ -22,6 +22,13 @@ impl NeovimHandler {
             noti_handlers: Arc::new(HashMap::new()),
         }
     }
+
+    pub async fn post_instance(
+        &self, nvim: &Neovim<NvimWriter>,
+    ) -> anyhow::Result<()> {
+        self.session.post_instance(nvim).await?;
+        Ok(())
+    }
 }
 
 impl Default for NeovimHandler {

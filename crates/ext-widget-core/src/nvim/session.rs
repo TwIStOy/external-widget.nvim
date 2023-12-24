@@ -8,7 +8,7 @@ use std::{
 
 use anyhow::{bail, Context};
 use async_recursion::async_recursion;
-use futures::AsyncWrite;
+use futures::{AsyncWrite, Future};
 use libloading::Library;
 use nvim_rs::Neovim;
 use once_cell::sync::Lazy;
@@ -16,6 +16,8 @@ use parking_lot::Mutex;
 use regex::Regex;
 use rmpv::ext::from_value;
 use tree_sitter::{Language, Parser};
+
+use crate::term::TermWriter;
 
 use super::HighlightInfos;
 
@@ -27,6 +29,7 @@ use super::HighlightInfos;
 pub struct NeovimSession {
     pub ts_libs: Mutex<HashMap<PathBuf, Arc<Library>>>,
     pub ts_queries: Mutex<HashMap<String, String>>,
+    pub tty_writer: Mutex<Option<Arc<Mutex<TermWriter>>>>,
 }
 
 static INHERITS_REGEX: Lazy<Regex> =
@@ -37,6 +40,7 @@ impl NeovimSession {
         Self {
             ts_libs: Mutex::new(HashMap::new()),
             ts_queries: Mutex::new(HashMap::new()),
+            tty_writer: Mutex::new(None),
         }
     }
 
@@ -228,7 +232,7 @@ impl NeovimSession {
         Ok(None)
     }
 
-    pub async fn get_tty<W>(&self, nvim: &Neovim<W>) -> anyhow::Result<String>
+    pub async fn get_tty<W>(nvim: &Neovim<W>) -> anyhow::Result<String>
     where
         W: AsyncWrite + Send + Unpin + 'static,
     {
@@ -246,6 +250,27 @@ impl NeovimSession {
             }
             _ => bail!("unexpected return value, {}", ret),
         }
+    }
+
+    pub async fn post_instance<W>(&self, nvim: &Neovim<W>) -> anyhow::Result<()>
+    where
+        W: AsyncWrite + Send + Unpin + 'static,
+    {
+        {
+            let tty_writer = self.tty_writer.lock();
+            if tty_writer.is_some() {
+                return Ok(());
+            }
+        }
+        let tty = Self::get_tty(nvim).await?;
+        let new_writer = TermWriter::new_tmux_tty(&tty, false).await?;
+
+        let mut tty_writer = self.tty_writer.lock();
+        if tty_writer.is_some() {
+            return Ok(());
+        }
+        *tty_writer = Some(Arc::new(Mutex::new(new_writer)));
+        Ok(())
     }
 }
 
@@ -273,8 +298,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_tty() -> anyhow::Result<()> {
         let embed_nvim = EmbedNvim::new().await?;
-        let session = NeovimSession::new();
-        let tty = session.get_tty(&embed_nvim.neovim).await?;
+        let tty = NeovimSession::get_tty(&embed_nvim.neovim).await?;
         println!("tty: {}", tty);
         Ok(())
     }
