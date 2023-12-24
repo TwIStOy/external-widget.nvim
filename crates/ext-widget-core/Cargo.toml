@@ -34,6 +34,7 @@ tracing-subscriber = { version = "0.3.18", features = ["env-filter", "serde"] }
 tracing-log = "0.2.0"
 rmpv = { version = "1.0.1", features = ["with-serde"] }
 futures = "0.3.29"
+async-recursion = "1.0.5"
 
 [dev-dependencies]
 all_asserts = "2.3.1"

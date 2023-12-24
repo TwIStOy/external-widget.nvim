@@ -1,9 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use anyhow::{bail, Context};
-use taffy::{
-    AvailableSpace, NodeId, PrintTree, TaffyTree, TraversePartialTree,
-};
+use taffy::{AvailableSpace, NodeId, TaffyTree, TraversePartialTree};
 use tracing::{instrument, trace};
 
 use crate::painting::{Location, RectSize, RenderCtx, Renderer};

@@ -1,8 +1,7 @@
 mod highlight;
 mod rtp;
 mod session;
-mod treesitter;
 
-pub use highlight::nvim_highlight_into_text_style;
+pub use highlight::HighlightInfos;
 pub use rtp::find_file_in_runtime_path;
-pub use treesitter::{load_ts_parser, load_ts_query};
+pub use session::NeovimSession;

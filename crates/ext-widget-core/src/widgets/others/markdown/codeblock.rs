@@ -1,6 +1,8 @@
 use anyhow::Context;
+use futures::AsyncWrite;
+use nvim_rs::Neovim;
 
-use crate::nvim::{load_ts_parser, load_ts_query};
+use crate::nvim::NeovimSession;
 
 #[derive(Debug, Eq, PartialEq)]
 pub(super) enum HighlightMarkerType {
@@ -39,11 +41,17 @@ impl Ord for HighlightMarker {
     }
 }
 
-pub(super) fn get_all_captures(
-    code: &str, lang: &str,
-) -> anyhow::Result<Vec<HighlightMarker>> {
-    let mut parser = load_ts_parser(lang)?;
-    let query = load_ts_query(lang, "highlights")?;
+pub(super) async fn get_all_captures<W>(
+    nvim: &Neovim<W>, session: &NeovimSession, code: &str, lang: &str,
+) -> anyhow::Result<Vec<HighlightMarker>>
+where
+    W: AsyncWrite + Send + Unpin + 'static,
+{
+    let mut parser = session
+        .load_ts_parser(nvim, lang)
+        .await?
+        .context("Parser?")?;
+    let query = session.load_ts_query(nvim, lang, "highlights").await?;
     let tree = parser.parse(code, None).context("Parse tree failed")?;
     let mut cursor = tree_sitter::QueryCursor::new();
 
