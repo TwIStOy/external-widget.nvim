@@ -143,3 +143,19 @@ impl HighlightInfos {
         // pub blend: Option<u32>,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{nvim::NeovimSession, test_utils::EmbedNvim};
+
+    #[tokio::test]
+    async fn test_get_normal_highlight() -> anyhow::Result<()> {
+        let embed_nvim = EmbedNvim::new().await?;
+        let session = NeovimSession::new();
+        let hl = session
+            .get_highlight_info(&embed_nvim.neovim, "Normal")
+            .await?;
+        println!("{:?}", hl);
+        Ok(())
+    }
+}

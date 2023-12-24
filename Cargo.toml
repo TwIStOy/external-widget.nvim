@@ -5,6 +5,7 @@ members = [
   "crates/core",
   "crates/widgets",
   "crates/ext-widget-core",
+  "crates/ext-widget-bin",
 ]
 
 [workspace.dependencies]

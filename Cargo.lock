@@ -556,12 +556,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "ext-widget"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "ext-widget-core",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "ext-widget-core"
 version = "0.1.0"
 dependencies = [
  "all_asserts",
  "anyhow",
  "async-recursion",
+ "async-trait",
  "base64",
  "comrak",
  "futures 0.3.29",

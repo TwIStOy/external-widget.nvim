@@ -6,7 +6,7 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use async_recursion::async_recursion;
 use futures::AsyncWrite;
 use libloading::Library;
@@ -226,5 +226,56 @@ impl NeovimSession {
             }
         }
         Ok(None)
+    }
+
+    pub async fn get_tty<W>(&self, nvim: &Neovim<W>) -> anyhow::Result<String>
+    where
+        W: AsyncWrite + Send + Unpin + 'static,
+    {
+        let ret = nvim
+            .exec_lua(
+                r#"return io.popen("tty 2>/dev/null"):read("*a")"#,
+                vec![],
+            )
+            .await?;
+        match ret {
+            rmpv::Value::String(ret) => {
+                let ret =
+                    ret.as_str().context("should str")?.trim().to_string();
+                Ok(ret)
+            }
+            _ => bail!("unexpected return value, {}", ret),
+        }
+    }
+}
+
+impl Default for NeovimSession {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{nvim::NeovimSession, test_utils::EmbedNvim};
+
+    #[tokio::test]
+    async fn test_get_normal_highlight() -> anyhow::Result<()> {
+        let embed_nvim = EmbedNvim::new().await?;
+        let session = NeovimSession::new();
+        let hl = session
+            .get_highlight_info(&embed_nvim.neovim, "Normal")
+            .await?;
+        println!("{:?}", hl);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_tty() -> anyhow::Result<()> {
+        let embed_nvim = EmbedNvim::new().await?;
+        let session = NeovimSession::new();
+        let tty = session.get_tty(&embed_nvim.neovim).await?;
+        println!("tty: {}", tty);
+        Ok(())
     }
 }

@@ -1,0 +1,17 @@
+[package]
+name = "ext-widget"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "ext-widget"
+path = "src/main.rs"
+
+[dependencies]
+ext-widget-core = { path = "../ext-widget-core" }
+
+anyhow = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+clap = { version = "4.4.11", features = ["derive", "cargo", "env"] }
