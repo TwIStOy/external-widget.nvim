@@ -90,6 +90,14 @@ impl Widget for Container {
 
         Ok(())
     }
+
+    fn children(&self) -> Vec<Rc<dyn Widget>> {
+        if let Some(c) = &self.child {
+            vec![c.clone()]
+        } else {
+            vec![]
+        }
+    }
 }
 
 impl Container {

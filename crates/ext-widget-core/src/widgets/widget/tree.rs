@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use anyhow::{bail, Context};
 use taffy::{AvailableSpace, NodeId, TaffyTree, TraversePartialTree};
-use tracing::{instrument, trace};
+use tracing::{info, instrument, trace};
 
 use crate::painting::{Location, RectSize, RenderCtx, Renderer};
 
@@ -102,6 +102,7 @@ impl WidgetTree {
     }
 
     /// Mount a widget into the widget tree, and set it as the root.
+    #[instrument(skip(self, widget))]
     pub fn new_root(
         &mut self, widget: Rc<dyn Widget>,
     ) -> anyhow::Result<NodeId> {
@@ -111,7 +112,7 @@ impl WidgetTree {
     }
 
     /// Mount a widget (and all recursive children) into the widget tree.
-    #[instrument(skip(self))]
+    #[instrument(skip(self, widget))]
     pub fn new_leaf(
         &mut self, widget: Rc<dyn Widget>,
     ) -> anyhow::Result<NodeId> {

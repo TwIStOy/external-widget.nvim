@@ -56,7 +56,13 @@ where
             None => event.metadata().target(),
         };
 
-        write!(writer, "[{} {}] ", level, target)?;
+        write!(
+            writer,
+            "[{} {}:{}] ",
+            level,
+            target,
+            event.metadata().line().unwrap_or_default()
+        )?;
 
         // Write spans and fields of each span
         ctx.visit_spans(|span| {
