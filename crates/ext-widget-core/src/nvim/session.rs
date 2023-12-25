@@ -15,6 +15,7 @@ use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use regex::Regex;
 use rmpv::ext::from_value;
+use tracing::{info, instrument};
 use tree_sitter::{Language, Parser};
 
 use crate::term::TermWriter;
@@ -71,6 +72,22 @@ impl NeovimSession {
                 return Ok(res);
             }
         }
+    }
+
+    pub fn get_highlight_info_sync<W>(
+        self: Arc<Self>, nvim: Neovim<W>, name: &str,
+    ) -> anyhow::Result<HighlightInfos>
+    where
+        W: AsyncWrite + Send + Unpin + 'static,
+    {
+        let (sender, receiver) = tokio::sync::oneshot::channel();
+        let name = name.to_string();
+        tokio::spawn(async move {
+            let res = self.get_highlight_info(&nvim, &name).await;
+            let _ = sender.send(res);
+        });
+        futures::executor::block_on(receiver)
+            .context("Failed to get highlight info")?
     }
 
     pub async fn load_ts_parser<W>(
@@ -252,17 +269,22 @@ impl NeovimSession {
         }
     }
 
+    #[instrument(skip(nvim))]
     pub async fn post_instance<W>(&self, nvim: &Neovim<W>) -> anyhow::Result<()>
     where
         W: AsyncWrite + Send + Unpin + 'static,
     {
+        info!("start_post instance");
         {
             let tty_writer = self.tty_writer.lock();
+            info!("tty writer locked");
             if tty_writer.is_some() {
+                info!("Already exists");
                 return Ok(());
             }
         }
         let tty = Self::get_tty(nvim).await?;
+        info!("got tty: {}", tty);
         let new_writer = TermWriter::new_tmux_tty(&tty, false).await?;
 
         let mut tty_writer = self.tty_writer.lock();
@@ -270,6 +292,7 @@ impl NeovimSession {
             return Ok(());
         }
         *tty_writer = Some(Arc::new(tokio::sync::Mutex::new(new_writer)));
+        info!("setup writer");
         Ok(())
     }
 

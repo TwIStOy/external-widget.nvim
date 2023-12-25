@@ -1,11 +1,14 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
 use async_trait::async_trait;
 use nvim_rs::{Handler, Neovim};
 use rmpv::Value;
-use tracing::{instrument, warn};
+use tracing::{info, instrument, warn};
 
-use super::{NeovimSession, NvimWriter};
+use super::{
+    handlers::{StartHoverReq, StopHoverReq},
+    NeovimSession, NvimWriter,
+};
 
 #[derive(Clone)]
 pub struct NeovimHandler {
@@ -16,16 +19,24 @@ pub struct NeovimHandler {
 
 impl NeovimHandler {
     pub fn new() -> Self {
+        let mut req_handlers: HashMap<String, Box<dyn NeovimService>> =
+            HashMap::new();
+
+        req_handlers.insert("start_hover".to_string(), Box::new(StartHoverReq));
+        req_handlers.insert("stop_hover".to_string(), Box::new(StopHoverReq));
+
         Self {
             session: Arc::new(NeovimSession::new()),
-            req_handlers: Arc::new(HashMap::new()),
+            req_handlers: Arc::new(req_handlers),
             noti_handlers: Arc::new(HashMap::new()),
         }
     }
 
+    #[instrument(skip(self, nvim))]
     pub async fn post_instance(
         &self, nvim: &Neovim<NvimWriter>,
     ) -> anyhow::Result<()> {
+        info!("Post instance");
         self.session.post_instance(nvim).await?;
         Ok(())
     }
@@ -38,7 +49,7 @@ impl Default for NeovimHandler {
 }
 
 #[async_trait]
-pub(super) trait NeovimService: Send + Sync {
+pub(super) trait NeovimService: Send + Sync + Debug {
     async fn call(
         &self, name: String, args: Vec<Value>, neovim: Neovim<NvimWriter>,
         session: Arc<NeovimSession>,
@@ -54,6 +65,7 @@ impl Handler for NeovimHandler {
         &self, name: String, args: Vec<Value>, neovim: Neovim<Self::Writer>,
     ) -> Result<Value, Value> {
         let handler = self.req_handlers.get(&name);
+        info!("Process request, found handler: {:?}", handler);
         match handler {
             Some(handler) => {
                 handler.call(name, args, neovim, self.session.clone()).await
@@ -67,6 +79,7 @@ impl Handler for NeovimHandler {
         &self, name: String, args: Vec<Value>, neovim: Neovim<Self::Writer>,
     ) {
         let handler = self.noti_handlers.get(&name);
+        info!("Process notify, found handler: {:?}", handler);
         match handler {
             Some(handler) => {
                 if let Err(err) =

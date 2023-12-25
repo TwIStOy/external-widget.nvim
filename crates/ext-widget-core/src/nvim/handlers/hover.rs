@@ -1,11 +1,11 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::{cell::RefCell, num::NonZeroU32, rc::Rc, sync::Arc};
 
 use anyhow::{bail, Context};
 use async_trait::async_trait;
 use futures::AsyncWrite;
 use nvim_rs::Neovim;
 use rmpv::Value;
-use tracing::{instrument, warn};
+use tracing::{instrument, warn, info};
 
 use crate::{
     nvim::{handler::NeovimService, NeovimSession, NvimWriter, CONFIG},
@@ -14,9 +14,7 @@ use crate::{
     widgets::{BoxOptions, Container, MarkdownDocumentBuilder, WidgetTree},
 };
 
-struct StartHoverReq;
-
-#[instrument(skip(nvim))]
+#[instrument(skip(nvim, md, session))]
 async fn build_hover_doc_image<W>(
     nvim: Neovim<W>, session: Arc<NeovimSession>, md: &str,
 ) -> anyhow::Result<Vec<u8>>
@@ -73,6 +71,8 @@ where
     let renderer = renderer.as_ref();
     let data = renderer.borrow_mut().snapshot_png_raw()?;
 
+    info!("Data len: {}", data.len());
+
     Ok(data)
 }
 
@@ -81,7 +81,7 @@ async fn process_req_start_hover(
     args: Vec<Value>, nvim: Neovim<NvimWriter>, session: Arc<NeovimSession>,
 ) -> anyhow::Result<u32> {
     if args.len() != 1 {
-        bail!("hover expects 2 arguments, got {}", args.len());
+        bail!("hover expects 1 arguments, got {}", args.len());
     }
     let md = args[0]
         .as_str()
@@ -125,14 +125,60 @@ async fn process_req_start_hover(
     Ok(u32::from(id))
 }
 
+/// Expect name: "stop_hover"
+#[instrument(skip(nvim))]
+async fn process_req_stop_hover(
+    args: Vec<Value>, nvim: Neovim<NvimWriter>, session: Arc<NeovimSession>,
+) -> anyhow::Result<u32> {
+    if args.len() != 1 {
+        bail!("stop_hover expects 1 argument, got {}", args.len());
+    }
+    let id =
+        NonZeroU32::try_from(args[0].as_u64().context("Expect u64")? as u32)?;
+    tokio::spawn(async move {
+        let image = IMAGE_MANAGER.lock().find_image(id);
+        if let Some(image) = image {
+            let writer = session.get_tty_writer(&nvim).await.unwrap();
+            let mut writer = writer.lock().await;
+            if let Err(e) = image.delete_image(&mut writer).await {
+                nvim.err_writeln(&format!("Error deleting image: {}", e))
+                    .await
+                    .unwrap_or_else(|e| {
+                        warn!("Error writing to nvim: {}", e);
+                    });
+            }
+        }
+    });
+    Ok(u32::from(id))
+}
+
+#[derive(Debug)]
+pub(crate) struct StartHoverReq;
+#[derive(Debug)]
+pub(crate) struct StopHoverReq;
+
 #[async_trait]
 impl NeovimService for StartHoverReq {
-    // #[instrument(skip(self, nvim))]
+    #[instrument(skip(self, neovim))]
     async fn call(
         &self, _name: String, args: Vec<Value>, neovim: Neovim<NvimWriter>,
         session: Arc<NeovimSession>,
     ) -> Result<Value, Value> {
         match process_req_start_hover(args, neovim, session).await {
+            Ok(v) => Ok(Value::from(v)),
+            Err(e) => Err(Value::from(e.to_string())),
+        }
+    }
+}
+
+#[async_trait]
+impl NeovimService for StopHoverReq {
+    #[instrument(skip(self, neovim))]
+    async fn call(
+        &self, _name: String, args: Vec<Value>, neovim: Neovim<NvimWriter>,
+        session: Arc<NeovimSession>,
+    ) -> Result<Value, Value> {
+        match process_req_stop_hover(args, neovim, session).await {
             Ok(v) => Ok(Value::from(v)),
             Err(e) => Err(Value::from(e.to_string())),
         }

@@ -108,19 +108,17 @@ impl<'o, 'f, W> Converter<'o, 'f, W>
 where
     W: AsyncWrite + Send + Unpin + 'static,
 {
-    async fn update_text_tyle_impl(&self, group: &str, style: &mut TextStyle) {
-        let hl = self.session.get_highlight_info(&self.nvim, group).await;
+    fn update_text_tyle(&self, group: &str, style: &mut TextStyle) {
+        let hl = self
+            .session
+            .clone()
+            .get_highlight_info_sync(self.nvim.clone(), group);
         match hl {
             Ok(hl) => hl.update_text_tyle(style),
             Err(e) => {
                 info!("Failed to get highlight info: {}", e);
             }
         }
-    }
-
-    fn update_text_tyle(&self, group: &str, style: &mut TextStyle) {
-        tokio::runtime::Handle::current()
-            .block_on(async { self.update_text_tyle_impl(group, style).await });
     }
 
     fn default_paragraph_style(&self) -> ParagraphStyle {
@@ -146,6 +144,7 @@ where
         'f: 'b,
     {
         let data = &node.data.borrow().value;
+        info!("visit_inline_node: {:?}", data);
         match data {
             NodeValue::Text(s) => self.visit_text(s, block),
             NodeValue::Emph => self.visit_emph(node, block),
@@ -286,14 +285,14 @@ where
             NodeValue::Heading(heading) => self.visit_heading(node, heading),
             NodeValue::ThematicBreak => {
                 trace!("visit_block_node: ThematicBreak");
-                let hl = tokio::runtime::Handle::current().block_on(async {
-                    self.session.get_highlight_info(&self.nvim, "Normal").await
-                })?;
+                let hl = self
+                    .session
+                    .clone()
+                    .get_highlight_info_sync(self.nvim.clone(), "Normal")?;
                 Ok(Rc::new(Container::new(
                     BoxDecoration {
                         color: hl.fg.unwrap_or_default(),
                         border: BoxBorder::NONE,
-                        ..Default::default()
                     },
                     BoxOptions {
                         constraints: BoxConstraints {
@@ -321,17 +320,21 @@ where
         block.last_paragraph.push_style(&style);
 
         let code = codeblock.literal.trim();
-        let mut highlights =
-            tokio::runtime::Handle::current().block_on(async {
-                get_all_captures(
-                    &self.nvim,
-                    &self.session,
-                    code,
-                    &codeblock.info,
-                )
-                .await
-                .unwrap_or_default()
+        let (sender, receiver) = tokio::sync::oneshot::channel();
+        {
+            let nvim = self.nvim.clone();
+            let session = self.session.clone();
+            let info = codeblock.info.clone();
+            let code = code.to_string();
+            tokio::spawn(async move {
+                let ret = get_all_captures(&nvim, &session, &code, &info)
+                    .await
+                    .unwrap_or_default();
+                sender.send(ret).unwrap();
             });
+        }
+        let mut highlights = futures::executor::block_on(receiver)?;
+        // let mut highlights = receiver.blocking_recv()?;
         highlights.sort();
 
         let mut m = 0usize;

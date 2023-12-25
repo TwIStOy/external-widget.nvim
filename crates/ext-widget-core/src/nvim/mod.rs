@@ -1,8 +1,8 @@
+mod config;
 mod handler;
 mod handlers;
 mod highlight;
 mod session;
-mod config;
 
 use futures::AsyncWrite;
 pub use highlight::HighlightInfos;
@@ -15,22 +15,24 @@ use tokio::{
 use tokio_util::compat::{TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt};
 use tracing::{error, info, instrument};
 
-pub(crate) use handler::NeovimHandler;
 pub use config::{ExtWidgetConfig, CONFIG};
+pub(crate) use handler::NeovimHandler;
 
 type NvimWriter = Box<dyn AsyncWrite + Send + Unpin + 'static>;
 
 /// Start a TCP server on the given address.
-#[instrument]
+#[instrument(skip(addr))]
 pub async fn start_server(addr: &str) -> anyhow::Result<()> {
     let listener = TcpListener::bind(addr).await?;
 
     loop {
         let (tcp, addr) = listener.accept().await.unwrap();
         info!("Accepted connection, {:?}, {:?}", tcp, addr);
-        if let Err(e) = create_neovim_from_tcp(tcp).await {
-            error!("Error: '{}'", e);
-        }
+        tokio::spawn(async {
+            if let Err(e) = create_neovim_from_tcp(tcp).await {
+                error!("Error: '{}'", e);
+            }
+        });
     }
 }
 
@@ -52,6 +54,7 @@ pub async fn start_parent() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[instrument]
 async fn create_neovim_from_tcp(tcp: TcpStream) -> anyhow::Result<()> {
     let handler = NeovimHandler::new();
     let (reader, writer) = split(tcp);
@@ -60,7 +63,6 @@ async fn create_neovim_from_tcp(tcp: TcpStream) -> anyhow::Result<()> {
         Box::new(writer.compat_write()),
         handler.clone(),
     );
-    handler.post_instance(&neovim).await?;
 
     tokio::spawn(async move {
         if let Err(error) = io.await {
@@ -69,6 +71,8 @@ async fn create_neovim_from_tcp(tcp: TcpStream) -> anyhow::Result<()> {
             }
         };
     });
+
+    handler.post_instance(&neovim).await?;
 
     Ok(())
 }
