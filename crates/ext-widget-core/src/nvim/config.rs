@@ -77,7 +77,7 @@ fn default_hover_window_size() -> WindowSizeConfig {
 }
 
 fn default_normal_font() -> Vec<String> {
-    vec!["Sans".to_string()]
+    vec!["LXGW WenKai".to_string()]
 }
 
 fn default_mono_font() -> Vec<String> {
@@ -85,7 +85,7 @@ fn default_mono_font() -> Vec<String> {
 }
 
 fn default_font_size() -> f32 {
-    14.0
+    16.0
 }
 
 pub static CONFIG: Lazy<Mutex<ExtWidgetConfig>> =

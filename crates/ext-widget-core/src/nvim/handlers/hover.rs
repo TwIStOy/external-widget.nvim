@@ -65,10 +65,6 @@ where
     widget_tree.new_root(Rc::new(container))?;
     widget_tree.compute_layout(width, height)?;
 
-    for line in widget_tree.debug_tree().unwrap() {
-        info!("{}", line);
-    }
-
     let renderer =
         Rc::new(RefCell::new(Renderer::new(width as u32, height as u32)?));
     widget_tree.paint(renderer.clone())?;
@@ -97,8 +93,11 @@ async fn process_req_start_hover(
     }
     let id = ImageManager::alloc_id();
     tokio::spawn(async move {
+        let st = std::time::Instant::now();
         let image =
             build_hover_doc_image(nvim.clone(), session.clone(), &md).await;
+        let ed = std::time::Instant::now();
+        info!("build hover doc image cost: {:?}", (ed - st).as_millis());
         match image {
             Ok(image) => {
                 let image =
