@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use futures::AsyncWrite;
 use nvim_rs::Neovim;
 use rmpv::Value;
-use tracing::{instrument, warn, info};
+use tracing::{info, instrument, warn};
 
 use crate::{
     nvim::{handler::NeovimService, NeovimSession, NvimWriter, CONFIG},
@@ -41,7 +41,7 @@ where
         .get_highlight_info(&nvim, "Normal")
         .await
         .unwrap_or_default();
-    let widget = md_widget_builder.build(md)?;
+    let widget = md_widget_builder.build(md).await?;
     let background_color = background_color
         .guibg
         .unwrap_or_else(|| background_color.bg.unwrap_or_default());
@@ -65,7 +65,12 @@ where
     widget_tree.new_root(Rc::new(container))?;
     widget_tree.compute_layout(width, height)?;
 
-    let renderer = Rc::new(RefCell::new(Renderer::new()?));
+    for line in widget_tree.debug_tree().unwrap() {
+        info!("{}", line);
+    }
+
+    let renderer =
+        Rc::new(RefCell::new(Renderer::new(width as u32, height as u32)?));
     widget_tree.paint(renderer.clone())?;
 
     let renderer = renderer.as_ref();

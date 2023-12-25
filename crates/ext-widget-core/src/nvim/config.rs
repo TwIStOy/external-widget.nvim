@@ -7,7 +7,20 @@ pub struct ExtWidgetConfig {
     pub hover: HoverConfig,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HoverConfig {
+    #[serde(default = "default_normal_font")]
+    pub normal_font: Vec<String>,
+    #[serde(default = "default_font_size")]
+    pub normal_font_size: f32,
+    #[serde(default = "default_mono_font")]
+    pub mono_font: Vec<String>,
+    #[serde(default = "default_font_size")]
+    pub mono_font_size: f32,
+    pub window: WindowSizeConfig,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct WindowSizeConfig {
     #[serde(default = "default_window_size_width")]
     pub max_width: f32,
@@ -19,17 +32,27 @@ pub struct WindowSizeConfig {
     pub y_offset: f32,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct HoverConfig {
-    #[serde(default = "default_normal_font")]
-    pub normal_font: Vec<String>,
-    #[serde(default = "default_font_size")]
-    pub normal_font_size: f32,
-    #[serde(default = "default_mono_font")]
-    pub mono_font: Vec<String>,
-    #[serde(default = "default_font_size")]
-    pub mono_font_size: f32,
-    pub window: WindowSizeConfig,
+impl Default for HoverConfig {
+    fn default() -> Self {
+        Self {
+            normal_font: default_normal_font(),
+            normal_font_size: default_font_size(),
+            mono_font: default_mono_font(),
+            mono_font_size: default_font_size(),
+            window: default_hover_window_size(),
+        }
+    }
+}
+
+impl Default for WindowSizeConfig {
+    fn default() -> Self {
+        Self {
+            max_width: default_window_size_width(),
+            max_height: default_window_size_height(),
+            x_offset: default_offset(),
+            y_offset: default_offset(),
+        }
+    }
 }
 
 fn default_window_size_width() -> f32 {

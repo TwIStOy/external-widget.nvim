@@ -13,7 +13,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new() -> anyhow::Result<Self> {
+    pub fn new(width: u32, height: u32) -> anyhow::Result<Self> {
         let surface = surfaces::raster_n32_premul((1000, 1000)).unwrap();
         Ok(Self { surface })
     }

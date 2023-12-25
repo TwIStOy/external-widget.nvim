@@ -269,22 +269,18 @@ impl NeovimSession {
         }
     }
 
-    #[instrument(skip(nvim))]
+    #[instrument(skip(self, nvim))]
     pub async fn post_instance<W>(&self, nvim: &Neovim<W>) -> anyhow::Result<()>
     where
         W: AsyncWrite + Send + Unpin + 'static,
     {
-        info!("start_post instance");
         {
             let tty_writer = self.tty_writer.lock();
-            info!("tty writer locked");
             if tty_writer.is_some() {
-                info!("Already exists");
                 return Ok(());
             }
         }
         let tty = Self::get_tty(nvim).await?;
-        info!("got tty: {}", tty);
         let new_writer = TermWriter::new_tmux_tty(&tty, false).await?;
 
         let mut tty_writer = self.tty_writer.lock();
@@ -292,7 +288,6 @@ impl NeovimSession {
             return Ok(());
         }
         *tty_writer = Some(Arc::new(tokio::sync::Mutex::new(new_writer)));
-        info!("setup writer");
         Ok(())
     }
 

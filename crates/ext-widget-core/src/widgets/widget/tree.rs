@@ -111,6 +111,7 @@ impl WidgetTree {
     }
 
     /// Mount a widget (and all recursive children) into the widget tree.
+    #[instrument(skip(self))]
     pub fn new_leaf(
         &mut self, widget: Rc<dyn Widget>,
     ) -> anyhow::Result<NodeId> {

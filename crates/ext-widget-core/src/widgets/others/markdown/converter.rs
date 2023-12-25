@@ -1,6 +1,6 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 
-use anyhow::bail;
+use anyhow::{bail, Context};
 use comrak::nodes::{
     AstNode, NodeCode, NodeCodeBlock, NodeHeading, NodeList, NodeValue,
 };
@@ -15,14 +15,15 @@ use skia_safe::{
     FontStyle,
 };
 use tracing::{info, instrument, trace};
+use tree_sitter::{Parser, Query};
 
 use crate::{
-    nvim::NeovimSession,
+    nvim::{HighlightInfos, NeovimSession},
     painting::{BoxBorder, BoxConstraints, BoxDecoration, FlexibleLengthAuto},
     widgets::{widget::Widget, BoxOptions, Column, Container, RichText, Row},
 };
 
-use super::codeblock::{get_all_captures, HighlightMarkerType};
+use super::codeblock::{HighlightMarker, HighlightMarkerType};
 
 pub struct ConverterOptions {
     pub mono_font: Vec<String>,
@@ -39,6 +40,10 @@ where
     pub(super) font_collection: &'f FontCollection,
     pub(super) nvim: Neovim<W>,
     pub(super) session: Arc<NeovimSession>,
+
+    pub(super) parsers: HashMap<String, RefCell<Parser>>,
+    pub(super) highlight_queries: HashMap<String, Query>,
+    pub(super) highlight_infos: HashMap<String, HighlightInfos>,
 }
 
 pub(super) struct BlockContext<'a> {
@@ -109,16 +114,9 @@ where
     W: AsyncWrite + Send + Unpin + 'static,
 {
     fn update_text_tyle(&self, group: &str, style: &mut TextStyle) {
-        let hl = self
-            .session
-            .clone()
-            .get_highlight_info_sync(self.nvim.clone(), group);
-        match hl {
-            Ok(hl) => hl.update_text_tyle(style),
-            Err(e) => {
-                info!("Failed to get highlight info: {}", e);
-            }
-        }
+        self.highlight_infos
+            .get(group)
+            .map(|hl| hl.update_text_tyle(style));
     }
 
     fn default_paragraph_style(&self) -> ParagraphStyle {
@@ -285,13 +283,10 @@ where
             NodeValue::Heading(heading) => self.visit_heading(node, heading),
             NodeValue::ThematicBreak => {
                 trace!("visit_block_node: ThematicBreak");
-                let hl = self
-                    .session
-                    .clone()
-                    .get_highlight_info_sync(self.nvim.clone(), "Normal")?;
+                let hl = self.highlight_infos.get("Normal");
                 Ok(Rc::new(Container::new(
                     BoxDecoration {
-                        color: hl.fg.unwrap_or_default(),
+                        color: hl.map(|x| x.fg).flatten().unwrap_or_default(),
                         border: BoxBorder::NONE,
                     },
                     BoxOptions {
@@ -318,23 +313,9 @@ where
         style.set_font_families(&self.opts.mono_font);
         style.set_font_size(self.opts.mono_font_size);
         block.last_paragraph.push_style(&style);
-
-        let code = codeblock.literal.trim();
-        let (sender, receiver) = tokio::sync::oneshot::channel();
-        {
-            let nvim = self.nvim.clone();
-            let session = self.session.clone();
-            let info = codeblock.info.clone();
-            let code = code.to_string();
-            tokio::spawn(async move {
-                let ret = get_all_captures(&nvim, &session, &code, &info)
-                    .await
-                    .unwrap_or_default();
-                sender.send(ret).unwrap();
-            });
-        }
-        let mut highlights = futures::executor::block_on(receiver)?;
-        // let mut highlights = receiver.blocking_recv()?;
+        let code = &codeblock.literal;
+        let mut highlights =
+            get_all_captures(code, &codeblock.info, &self).unwrap_or_default();
         highlights.sort();
 
         let mut m = 0usize;
@@ -502,4 +483,50 @@ where
         };
         Ok(ret)
     }
+}
+
+fn get_all_captures<'o, 'f, W>(
+    code: &str, lang: &str, converter: &Converter<'o, 'f, W>,
+) -> anyhow::Result<Vec<HighlightMarker>>
+where
+    W: AsyncWrite + Send + Unpin + 'static,
+{
+    let mut parser = converter
+        .parsers
+        .get(lang)
+        .context("No parser")?
+        .borrow_mut();
+    let query = converter
+        .highlight_queries
+        .get(lang)
+        .context("No highlight query")?;
+
+    let tree = parser.parse(code, None).context("Parse tree failed")?;
+    let mut cursor = tree_sitter::QueryCursor::new();
+
+    let all_captures =
+        cursor.captures(&query, tree.root_node(), code.as_bytes());
+
+    let mut ret = vec![];
+    for (m, _) in all_captures {
+        for (_, capture) in m.captures.iter().enumerate() {
+            let start_byte = capture.node.start_byte();
+            let end_byte = capture.node.end_byte();
+            if start_byte < end_byte {
+                ret.push(HighlightMarker {
+                    group: query.capture_names()[capture.index as usize]
+                        .to_string(),
+                    kind: HighlightMarkerType::Start,
+                    offset: start_byte,
+                });
+                ret.push(HighlightMarker {
+                    group: query.capture_names()[capture.index as usize]
+                        .to_string(),
+                    offset: end_byte,
+                    kind: HighlightMarkerType::End,
+                })
+            }
+        }
+    }
+    Ok(ret)
 }

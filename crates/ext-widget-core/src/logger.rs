@@ -55,6 +55,7 @@ where
             Some(log) => log.target(),
             None => event.metadata().target(),
         };
+
         write!(writer, "[{} {}] ", level, target)?;
 
         // Write spans and fields of each span
