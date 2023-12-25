@@ -2,6 +2,7 @@ mod handler;
 mod handlers;
 mod highlight;
 mod session;
+mod config;
 
 use futures::AsyncWrite;
 pub use highlight::HighlightInfos;
@@ -15,6 +16,7 @@ use tokio_util::compat::{TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt};
 use tracing::{error, info, instrument};
 
 pub(crate) use handler::NeovimHandler;
+pub use config::{ExtWidgetConfig, CONFIG};
 
 type NvimWriter = Box<dyn AsyncWrite + Send + Unpin + 'static>;
 

@@ -25,7 +25,10 @@ use crate::{
 use super::codeblock::{get_all_captures, HighlightMarkerType};
 
 pub struct ConverterOptions {
-    pub mono_font: String,
+    pub mono_font: Vec<String>,
+    pub mono_font_size: f32,
+    pub normal_font: Vec<String>,
+    pub normal_font_size: f32,
 }
 
 pub(crate) struct Converter<'o, 'f, W>
@@ -118,6 +121,15 @@ where
     fn update_text_tyle(&self, group: &str, style: &mut TextStyle) {
         tokio::runtime::Handle::current()
             .block_on(async { self.update_text_tyle_impl(group, style).await });
+    }
+
+    fn default_paragraph_style(&self) -> ParagraphStyle {
+        let mut style = ParagraphStyle::default();
+        let mut text_style = style.text_style().clone();
+        text_style.set_font_families(&self.opts.normal_font);
+        text_style.set_font_size(self.opts.normal_font_size);
+        style.set_text_style(&text_style);
+        style
     }
 }
 
@@ -223,7 +235,8 @@ where
     ) -> anyhow::Result<()> {
         let mut style = block.last_paragraph.peek_style();
         self.update_text_tyle("@text.literal.markdown_inline", &mut style);
-        style.set_font_families(&[&self.opts.mono_font]);
+        style.set_font_families(&self.opts.mono_font);
+        style.set_font_size(self.opts.mono_font_size);
 
         block.last_paragraph.push_style(&style);
         block.last_paragraph.add_text(&c.literal);
@@ -303,7 +316,8 @@ where
         let mut block =
             BlockContext::new(&Default::default(), self.font_collection);
         let mut style = block.last_paragraph.peek_style();
-        style.set_font_families(&[&self.opts.mono_font]);
+        style.set_font_families(&self.opts.mono_font);
+        style.set_font_size(self.opts.mono_font_size);
         block.last_paragraph.push_style(&style);
 
         let code = codeblock.literal.trim();
@@ -370,13 +384,8 @@ where
         let mut block =
             BlockContext::new(&Default::default(), self.font_collection);
         let mut style = block.last_paragraph.peek_style();
-        let base_font_size = block
-            .last_paragraph
-            .get_paragraph_style()
-            .text_style()
-            .font_size();
-        style.set_font_families(&[&self.opts.mono_font]);
-        style.set_font_size(base_font_size * scale);
+        style.set_font_families(&self.opts.normal_font);
+        style.set_font_size(self.opts.normal_font_size * scale);
         block.last_paragraph.push_style(&style);
         for child in node.children() {
             assert!(!child.data.borrow().value.block());
@@ -458,9 +467,10 @@ where
                 &mut block.borrow_mut(),
                 self.font_collection,
             ),
-            None => {
-                BlockContext::new(&Default::default(), self.font_collection)
-            }
+            None => BlockContext::new(
+                &self.default_paragraph_style(),
+                self.font_collection,
+            ),
         };
         let block = RefCell::new(block);
         // visit childrens
@@ -490,114 +500,3 @@ where
         Ok(ret)
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use crate::painting::{Location, RectSize, RenderCtx, Renderer};
-
-//     use super::{Converter, ConverterOptions};
-//     use skia_safe::{textlayout::FontCollection, FontMgr};
-
-//     #[test]
-//     fn new_converter() {
-//         let opts = ConverterOptions {
-//             mono_font: "MonoLisa".to_string(),
-//         };
-//         let mut font_collection = FontCollection::new();
-//         font_collection.set_default_font_manager(FontMgr::new(), None);
-//         let _ = Converter::new(&opts, &font_collection);
-//     }
-
-//     #[test]
-//     fn visit_text() -> anyhow::Result<()> {
-//         let opts = ConverterOptions {
-//             mono_font: "MonoLisa".to_string(),
-//         };
-//         let mut font_collection = FontCollection::new();
-//         font_collection.set_default_font_manager(FontMgr::new(), None);
-//         let mut converter = Converter::new(&opts, &font_collection);
-//         let mut block =
-//             super::BlockContext::new(&Default::default(), &font_collection);
-//         converter.visit_text("Hello ", &mut block).unwrap();
-//         converter.visit_text("World", &mut block).unwrap();
-//         let w = block.pack_content().unwrap().unwrap();
-//         let mut renderer = Renderer::new()?;
-//         let mut ctx = RenderCtx {
-//             render: &mut renderer,
-//             top_left_location: Location { x: 0., y: 0. },
-//             size: RectSize {
-//                 width: 1000.,
-//                 height: 1000.,
-//             },
-//             content_size: RectSize {
-//                 width: 1000.,
-//                 height: 1000.,
-//             },
-//         };
-//         w.paint(&mut ctx)?;
-
-//         let png = renderer.snapshot_png_raw()?;
-//         // write png to /tmp/test.png
-//         std::fs::write("/tmp/test.png", png)?;
-
-//         Ok(())
-//     }
-// }
-
-// mod intergration_test {
-//     use std::{cell::RefCell, io::Write, rc::Rc};
-
-//     use crate::{
-//         logger::install_logger,
-//         painting::{Location, RectSize, RenderCtx, Renderer},
-//         widgets::widget::WidgetTree,
-//     };
-
-//     use super::{Converter, ConverterOptions};
-//     use skia_safe::{textlayout::FontCollection, FontMgr};
-//     use tracing::{info, trace};
-
-//     const MARKDOWN_DOC: &str = r#"### function `main`
-
-// → `int`
-// Parameters:
-// - `int argc`
-// - `const char * argv`
-
-// ```cpp
-// public: int main(int argc, const char *argv)
-// ```"#;
-
-//     // #[nvim_oxi::test]
-//     fn test_doc() {
-//         install_logger().unwrap();
-
-//         let arena = comrak::Arena::new();
-//         let root = comrak::parse_document(
-//             &arena,
-//             MARKDOWN_DOC,
-//             &comrak::ComrakOptions::default(),
-//         );
-
-//         let opts = ConverterOptions {
-//             mono_font: "MonoLisa".to_string(),
-//         };
-//         let mut font_collection = FontCollection::new();
-//         font_collection.set_default_font_manager(FontMgr::new(), None);
-//         let mut c = Converter::new(&opts, &font_collection);
-//         let w = c.visit_block_node(root, None).unwrap();
-
-//         let renderer = Rc::new(RefCell::new(Renderer::new().unwrap()));
-//         let mut tree = WidgetTree::new();
-//         tree.new_root(w).unwrap();
-//         tree.compute_layout(1000., 1000.).unwrap();
-
-//         let lines = tree.debug_tree().unwrap();
-//         trace!("\n{}", lines.join("\n"));
-//         tree.paint(renderer.clone()).unwrap();
-
-//         let png = renderer.borrow_mut().snapshot_png_raw().unwrap();
-//         // write png to /tmp/test.png
-//         std::fs::write("/tmp/test2.png", png).unwrap();
-//     }
-// }

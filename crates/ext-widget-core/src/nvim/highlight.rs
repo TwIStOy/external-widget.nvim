@@ -8,7 +8,7 @@ use skia_safe::{textlayout::TextStyle, FontStyle as SkFontStyle, Paint};
 
 use crate::painting::Color;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct HighlightInfos {
     #[serde(alias = "fg", alias = "foreground")]
     pub fg: Option<Color>,

@@ -37,6 +37,12 @@ pub enum ParseFlexibleLengthError {
     InvalidFormat,
 }
 
+impl From<f32> for FlexibleLength {
+    fn from(value: f32) -> Self {
+        Self::Fixed(value)
+    }
+}
+
 impl From<FlexibleLength> for LengthPercentage {
     fn from(value: FlexibleLength) -> Self {
         match value {

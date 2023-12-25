@@ -29,7 +29,7 @@ use super::HighlightInfos;
 pub struct NeovimSession {
     pub ts_libs: Mutex<HashMap<PathBuf, Arc<Library>>>,
     pub ts_queries: Mutex<HashMap<String, String>>,
-    pub tty_writer: Mutex<Option<Arc<Mutex<TermWriter>>>>,
+    pub tty_writer: Mutex<Option<Arc<tokio::sync::Mutex<TermWriter>>>>,
 }
 
 static INHERITS_REGEX: Lazy<Regex> =
@@ -269,8 +269,19 @@ impl NeovimSession {
         if tty_writer.is_some() {
             return Ok(());
         }
-        *tty_writer = Some(Arc::new(Mutex::new(new_writer)));
+        *tty_writer = Some(Arc::new(tokio::sync::Mutex::new(new_writer)));
         Ok(())
+    }
+
+    pub async fn get_tty_writer<W>(
+        &self, nvim: &Neovim<W>,
+    ) -> anyhow::Result<Arc<tokio::sync::Mutex<TermWriter>>>
+    where
+        W: AsyncWrite + Send + Unpin + 'static,
+    {
+        self.post_instance(nvim).await?;
+        let tty_writer = self.tty_writer.lock();
+        Ok(tty_writer.clone().unwrap())
     }
 }
 

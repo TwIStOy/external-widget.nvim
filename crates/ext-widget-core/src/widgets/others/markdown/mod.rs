@@ -1,6 +1,6 @@
 mod codeblock;
 mod converter;
-mod markdown_paragraph;
+mod markdown_document;
 
 use std::{rc::Rc, sync::Arc};
 
@@ -11,12 +11,14 @@ use skia_safe::{textlayout::FontCollection, FontMgr};
 
 use crate::{nvim::NeovimSession, widgets::widget::Widget};
 
-use self::converter::Converter;
+use converter::Converter;
+
+pub use markdown_document::MarkdownDocumentBuilder;
 
 /**
  * Render markdown text into a widget.
  */
-pub async fn render_markdown<W>(
+pub fn render_markdown<W>(
     nvim: &Neovim<W>, session: Arc<NeovimSession>, text: &str,
     options: &ConverterOptions,
 ) -> anyhow::Result<Rc<dyn Widget>>
@@ -34,6 +36,5 @@ where
     let arena = comrak::Arena::new();
     let root =
         comrak::parse_document(&arena, text, &comrak::ComrakOptions::default());
-    let w = converter.visit_block_node(root, None);
-    w
+    converter.visit_block_node(root, None)
 }

@@ -195,3 +195,9 @@ impl WidgetTree {
         Ok(())
     }
 }
+
+impl Default for WidgetTree {
+    fn default() -> Self {
+        Self::new()
+    }
+}
