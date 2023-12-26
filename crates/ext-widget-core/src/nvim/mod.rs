@@ -43,15 +43,21 @@ pub async fn start_parent() -> anyhow::Result<()> {
         Box::new(stdout().compat_write()),
         handler.clone(),
     );
+
+    tokio::spawn(async move {
+        if let Err(error) = io.await {
+            if !error.is_channel_closed() {
+                error!("Error: '{}'", error);
+            }
+        };
+    });
+
     handler.post_instance(&neovim).await?;
 
-    if let Err(error) = io.await {
-        if !error.is_channel_closed() {
-            error!("Error: '{}'", error);
-        }
-    };
-
-    Ok(())
+    loop {
+        // tokio sleep
+        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+    }
 }
 
 #[instrument]

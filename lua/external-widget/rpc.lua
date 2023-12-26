@@ -76,6 +76,7 @@ local GlobalClient = nil
 ---@param c ExtWidget.Client
 local function setup_global_client(c)
 	GlobalClient = c
+	c:setup_autocmd()
 end
 
 return {

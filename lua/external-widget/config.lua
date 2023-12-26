@@ -24,6 +24,7 @@ local default_config = {
 
 ---@param config ExtWidget.Config
 local function setup(config)
+  config = config or {}
 	local connect = vim.F.if_nil(config.connect, "embed")
 	local client
 	if connect == "embed" then

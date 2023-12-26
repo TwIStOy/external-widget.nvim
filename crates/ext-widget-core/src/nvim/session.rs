@@ -18,7 +18,7 @@ use rmpv::ext::from_value;
 use tracing::instrument;
 use tree_sitter::{Language, Parser};
 
-use crate::term::TermWriter;
+use crate::{env::in_tmux, term::TermWriter};
 
 use super::HighlightInfos;
 
@@ -281,7 +281,7 @@ impl NeovimSession {
             }
         }
         let tty = Self::get_tty(nvim).await?;
-        let new_writer = TermWriter::new_tmux_tty(&tty, false).await?;
+        let new_writer = TermWriter::new_tmux_tty(&tty, in_tmux()).await?;
 
         let mut tty_writer = self.tty_writer.lock();
         if tty_writer.is_some() {

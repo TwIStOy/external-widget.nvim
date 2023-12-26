@@ -40,7 +40,6 @@ impl TermWriter {
         } else {
             NeovimSession::get_tty(nvim).await?
         };
-        info!("tty: {}", tty);
         let writer =
             tokio::fs::OpenOptions::new().write(true).open(&tty).await?;
         let writer = BufWriter::new(writer);
@@ -53,6 +52,8 @@ impl TermWriter {
     }
 
     pub async fn new_tmux_tty(tty: &str, tmux: bool) -> anyhow::Result<Self> {
+        info!("tty: {}, tmux: {}", tty, tmux);
+
         let writer =
             tokio::fs::OpenOptions::new().write(true).open(tty).await?;
         let writer = BufWriter::new(writer);
