@@ -6,6 +6,23 @@ local Utils = require("external-widget.utils")
 ---@field private process vim.SystemObj?
 local Client = {}
 
+local function try_port()
+	local port = math.random(10000, 20000)
+	local netstat = vim.system({ "netstat", "-atnp" }, { text = true }):wait().stdout
+	if netstat == nil then
+		return port
+	end
+	-- find is a line contains "127.0.0.1:port"
+	local expect = "127.0.0.1:" .. port
+	local lines = vim.split(netstat, "\n")
+	for _, line in ipairs(lines) do
+		if line:find(expect) then
+			return try_port()
+		end
+	end
+	return port
+end
+
 ---@return ExtWidget.Client
 function Client.new_embed()
 	local cmd = Utils.get_package_path()
@@ -31,11 +48,13 @@ end
 
 ---@param addr string
 ---@return ExtWidget.Client
-function Client.new_tcp(addr)
+function Client.new_tcp(_addr)
 	local cmd = Utils.get_package_path()
 	cmd = cmd .. "/target/release/ext-widget"
+	local port = try_port()
+  local addr = "127.0.0.1:" .. port
 
-	local process = vim.system({ cmd, "serve" })
+	local process = vim.system({ cmd, "serve", "--addr", addr })
 	local ch
 	local max_try = 100
 	while true do
@@ -43,7 +62,7 @@ function Client.new_tcp(addr)
 			rpc = 1,
 		})
 		if succ then
-      ch = ret
+			ch = ret
 			break
 		end
 		vim.wait(10)

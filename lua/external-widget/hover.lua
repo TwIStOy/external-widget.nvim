@@ -8,6 +8,10 @@ local hover_group = vim.api.nvim_create_augroup("external_widget_hover", {
 ---@param err any
 ---@param res lsp.Hover
 local function hover_callback(client, err, res)
+	if err ~= nil then
+		return
+	end
+
 	local contents = res.contents
 	if contents == nil then
 		return
@@ -27,6 +31,7 @@ local function hover_callback(client, err, res)
 		"FocusLost",
 		"WinLeave",
 		"WinClosed",
+    "VimLeavePre",
 	}, {
 		once = true,
 		group = hover_group,

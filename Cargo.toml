@@ -3,25 +3,11 @@ resolver = "2"
 members = [
   "crates/ext-widget-core",
   "crates/ext-widget-bin",
+  "crates/ext-widget-lib",
 ]
 
 [workspace.dependencies]
-nvim-rs = { version = "0.6.0", features = ["use_tokio"] }
-async-trait = "0.1.74"
 tokio = { version = "1.35.0" }
-tokio-util = { version = "0.7.10", features = ["compat"] }
-rmpv = { version = "1.0.1", features = ["with-serde"] }
-cosmic-text = "0.10.0"
 anyhow = "1.0.75"
-thiserror = "1.0.51"
-pango = "0.18.3"
-cairo-rs = { version = "0.18.3", features = ["png"] }
-pangocairo = "0.18.0"
-taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "440843c700455363383e0a4fc365a15deebd4717" }
-tree-sitter = "0.20.10"
-libloading = "0.8.1"
-futures = "0.3.29"
-serde = { version = "1.0.193", features = ["derive"] }
 tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter", "serde"] }
 

@@ -1,0 +1,14 @@
+[package]
+name = "ext-widget-lib"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+tracing = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+
+nvim-oxi = { version = "0.4.1", features = ["neovim-nightly", "libuv", "test", "mlua"] }

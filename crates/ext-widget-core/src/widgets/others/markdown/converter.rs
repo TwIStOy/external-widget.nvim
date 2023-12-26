@@ -306,7 +306,7 @@ where
         }
     }
 
-    #[instrument(level = "trace", skip_all)]
+    #[instrument(skip(self, codeblock))]
     fn visit_code_block(
         &mut self, codeblock: &NodeCodeBlock,
     ) -> anyhow::Result<Rc<dyn Widget>> {
@@ -316,10 +316,12 @@ where
         style.set_font_families(&self.opts.mono_font);
         style.set_font_size(self.opts.mono_font_size);
         block.last_paragraph.push_style(&style);
-        let code = &codeblock.literal;
+        let code = codeblock.literal.trim().to_string();
         let mut highlights =
-            get_all_captures(code, &codeblock.info, &self).unwrap_or_default();
+            get_all_captures(&code, &codeblock.info, self).unwrap_or_default();
         highlights.sort();
+
+        info!("code?: {:?}", code);
 
         let mut m = 0usize;
         let mut offset = 0usize;
@@ -338,6 +340,7 @@ where
                 }
                 m += 1;
             }
+            info!("ch?: {:?}", ch.to_string());
             block.last_paragraph.add_text(&ch.to_string());
             offset += ch.len_utf8();
         }
