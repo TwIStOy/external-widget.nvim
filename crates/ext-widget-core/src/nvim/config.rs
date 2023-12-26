@@ -17,11 +17,11 @@ pub struct HoverConfig {
     pub mono_font: Vec<String>,
     #[serde(default = "default_font_size")]
     pub mono_font_size: f32,
-    pub window: WindowSizeConfig,
+    pub window: WindowConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct WindowSizeConfig {
+pub struct WindowConfig {
     #[serde(default = "default_window_size_width")]
     pub max_width: f32,
     #[serde(default = "default_window_size_height")]
@@ -44,7 +44,7 @@ impl Default for HoverConfig {
     }
 }
 
-impl Default for WindowSizeConfig {
+impl Default for WindowConfig {
     fn default() -> Self {
         Self {
             max_width: default_window_size_width(),
@@ -67,8 +67,8 @@ fn default_offset() -> f32 {
     0.0
 }
 
-fn default_hover_window_size() -> WindowSizeConfig {
-    WindowSizeConfig {
+fn default_hover_window_size() -> WindowConfig {
+    WindowConfig {
         max_width: 1000.0,
         max_height: 1000.0,
         x_offset: 0.0,

@@ -4,14 +4,14 @@ local hover_group = vim.api.nvim_create_augroup("external_widget_hover", {
 	clear = true,
 })
 
+---@param client ExtWidget.Client
 ---@param err any
 ---@param res lsp.Hover
-local function hover_callback(err, res)
+local function hover_callback(client, err, res)
 	local contents = res.contents
 	if contents == nil then
 		return
 	end
-	local client = Rpc.get_client()
 	if client == nil then
 		return
 	end
@@ -21,7 +21,7 @@ local function hover_callback(err, res)
 	vim.api.nvim_exec_autocmds("User", {
 		pattern = "ShowHover",
 	})
-	local image_id = vim.rpcrequest(client, "start_hover", value)
+	local image_id = client:request("start_hover", value)
 	vim.api.nvim_create_autocmd({
 		"CursorMoved",
 		"FocusLost",
@@ -33,15 +33,19 @@ local function hover_callback(err, res)
 		buffer = 0,
 		callback = function()
 			vim.o.eventignore = ""
-			vim.rpcrequest(client, "stop_hover", image_id)
+			client:request("stop_hover", image_id)
 			return true
 		end,
 	})
 end
 
-local function show_hover()
+---@param client ExtWidget.Client?
+local function show_hover(client)
+	client = client or Rpc.get_global_client()
 	local params = require("vim.lsp.util").make_position_params()
-	vim.lsp.buf_request(0, "textDocument/hover", params, hover_callback)
+	vim.lsp.buf_request(0, "textDocument/hover", params, function(...)
+		hover_callback(client, ...)
+	end)
 end
 
 return {

@@ -6,7 +6,7 @@ use rmpv::Value;
 use tracing::{info, instrument, warn};
 
 use super::{
-    handlers::{StartHoverReq, StopHoverReq},
+    handlers::{ConfigNotify, StartHoverReq, StopHoverReq},
     NeovimSession, NvimWriter,
 };
 
@@ -21,14 +21,19 @@ impl NeovimHandler {
     pub fn new() -> Self {
         let mut req_handlers: HashMap<String, Box<dyn NeovimService>> =
             HashMap::new();
+        let mut noti_handlers: HashMap<String, Box<dyn NeovimService>> =
+            HashMap::new();
 
         req_handlers.insert("start_hover".to_string(), Box::new(StartHoverReq));
         req_handlers.insert("stop_hover".to_string(), Box::new(StopHoverReq));
 
+        noti_handlers
+            .insert("config_notify".to_string(), Box::new(ConfigNotify));
+
         Self {
             session: Arc::new(NeovimSession::new()),
             req_handlers: Arc::new(req_handlers),
-            noti_handlers: Arc::new(HashMap::new()),
+            noti_handlers: Arc::new(noti_handlers),
         }
     }
 
