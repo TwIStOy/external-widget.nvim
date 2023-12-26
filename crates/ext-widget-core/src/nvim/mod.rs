@@ -7,7 +7,7 @@ mod session;
 use futures::AsyncWrite;
 pub use highlight::HighlightInfos;
 use nvim_rs::Neovim;
-pub use session::NeovimSession;
+pub use session::{NeovimSession, NvimTermSize};
 use tokio::{
     io::{split, stdin, stdout},
     net::{TcpListener, TcpStream},

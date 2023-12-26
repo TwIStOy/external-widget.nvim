@@ -28,7 +28,7 @@ impl NeovimHandler {
         req_handlers.insert("stop_hover".to_string(), Box::new(StopHoverReq));
 
         noti_handlers
-            .insert("config_notify".to_string(), Box::new(ConfigNotify));
+            .insert("update_config".to_string(), Box::new(ConfigNotify));
 
         Self {
             session: Arc::new(NeovimSession::new()),

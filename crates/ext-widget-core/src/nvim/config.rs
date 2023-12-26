@@ -26,10 +26,10 @@ pub struct WindowConfig {
     pub max_width: f32,
     #[serde(default = "default_window_size_height")]
     pub max_height: f32,
-    #[serde(default = "default_offset")]
-    pub x_offset: f32,
-    #[serde(default = "default_offset")]
-    pub y_offset: f32,
+    #[serde(default = "default_x_offset")]
+    pub x_offset: i32,
+    #[serde(default = "default_y_offset")]
+    pub y_offset: i32,
 }
 
 impl Default for HoverConfig {
@@ -49,8 +49,8 @@ impl Default for WindowConfig {
         Self {
             max_width: default_window_size_width(),
             max_height: default_window_size_height(),
-            x_offset: default_offset(),
-            y_offset: default_offset(),
+            x_offset: default_x_offset(),
+            y_offset: default_y_offset(),
         }
     }
 }
@@ -63,16 +63,20 @@ fn default_window_size_height() -> f32 {
     1000.0
 }
 
-fn default_offset() -> f32 {
-    0.0
+fn default_x_offset() -> i32 {
+    0
+}
+
+fn default_y_offset() -> i32 {
+    1
 }
 
 fn default_hover_window_size() -> WindowConfig {
     WindowConfig {
         max_width: 1000.0,
         max_height: 1000.0,
-        x_offset: 0.0,
-        y_offset: 0.0,
+        x_offset: 0,
+        y_offset: 1,
     }
 }
 

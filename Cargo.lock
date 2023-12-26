@@ -507,6 +507,7 @@ dependencies = [
  "parking_lot",
  "regex",
  "rmpv",
+ "rustix",
  "serde",
  "skia-safe",
  "taffy",
@@ -1420,8 +1421,10 @@ checksum = "72e572a5e8ca657d7366229cdde4bd14c4eb5499a9573d4d366fe1b599daa316"
 dependencies = [
  "bitflags 2.4.1",
  "errno",
+ "itoa",
  "libc",
  "linux-raw-sys",
+ "once_cell",
  "windows-sys 0.52.0",
 ]
 

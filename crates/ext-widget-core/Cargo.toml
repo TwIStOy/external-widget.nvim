@@ -35,6 +35,7 @@ nvim-rs = { version = "0.6.0", features = ["use_tokio"] }
 async-trait = "0.1.75"
 tokio-util = { version = "0.7.10", features = ["compat"] }
 serde = { version = "1.0.193", features = ["derive"] }
+rustix = { version = "0.38.28", features = ["all-apis"] }
 
 [dev-dependencies]
 all_asserts = "2.3.1"

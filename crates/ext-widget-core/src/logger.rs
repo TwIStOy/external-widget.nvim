@@ -24,7 +24,7 @@ pub fn install_logger() -> anyhow::Result<()> {
     let ra_fmt_layer = tracing_subscriber::fmt::layer()
         .event_format(LoggerFormatter)
         .with_writer(writer);
-    let filter = LevelFilter::TRACE;
+    let filter = LevelFilter::INFO;
 
     Registry::default().with(ra_fmt_layer).with(filter).init();
 

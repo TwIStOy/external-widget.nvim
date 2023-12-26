@@ -15,6 +15,7 @@ use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use regex::Regex;
 use rmpv::ext::from_value;
+use serde::{Deserialize, Serialize};
 use tracing::instrument;
 use tree_sitter::{Language, Parser};
 
@@ -301,6 +302,48 @@ impl NeovimSession {
         let tty_writer = self.tty_writer.lock();
         Ok(tty_writer.clone().unwrap())
     }
+
+    pub async fn cursor_position_to_client<W>(
+        nvim: &Neovim<W>,
+    ) -> anyhow::Result<(i32, i32)>
+    where
+        W: AsyncWrite + Send + Unpin + 'static,
+    {
+        let cur_win = nvim.get_current_win().await?;
+        let (row, col) = cur_win.get_cursor().await?;
+        let win_pos = cur_win.get_position().await?;
+        let line_start: i64 =
+            from_value(nvim.call_function("line", vec!["w0".into()]).await?)?;
+
+        let row = row - line_start + win_pos.0;
+        let col = col + win_pos.1;
+
+        Ok((row as i32, col as i32))
+    }
+
+    pub async fn get_term_size<W>(
+        nvim: &Neovim<W>,
+    ) -> anyhow::Result<NvimTermSize>
+    where
+        W: AsyncWrite + Send + Unpin + 'static,
+    {
+        let ret = nvim
+            .exec_lua(
+                r#"return require("external-widget.utils").get_term_size()"#,
+                vec![],
+            )
+            .await?;
+        let ret: NvimTermSize = rmpv::ext::from_value(ret)?;
+        Ok(ret)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NvimTermSize {
+    pub row: u32,
+    pub col: u32,
+    pub xpixel: u32,
+    pub ypixel: u32,
 }
 
 impl Default for NeovimSession {

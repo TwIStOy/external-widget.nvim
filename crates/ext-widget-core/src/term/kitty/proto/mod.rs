@@ -9,7 +9,7 @@ pub use actions::*;
 use base64::Engine;
 pub use common::*;
 
-use super::writer::TermWriter;
+use crate::term::writer::TermWriter;
 
 // use crate::term::TermWriter;
 

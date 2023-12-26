@@ -1,23 +1,28 @@
-use std::{cell::RefCell, num::NonZeroU32, rc::Rc, sync::Arc};
+use std::{cell::RefCell, fs::File, num::NonZeroU32, rc::Rc, sync::Arc};
 
 use anyhow::{bail, Context};
 use async_trait::async_trait;
 use futures::AsyncWrite;
 use nvim_rs::Neovim;
 use rmpv::Value;
+use rustix::fd::AsRawFd;
 use tracing::{info, instrument, warn};
 
 use crate::{
     nvim::{handler::NeovimService, NeovimSession, NvimWriter, CONFIG},
-    painting::{BoxBorder, BoxDecoration, Color, Padding, Renderer},
-    term::image::{ImageManager, IMAGE_MANAGER},
+    painting::{BoxBorder, BoxDecoration, Color, Padding, RectSize, Renderer},
+    term::{
+        get_term_size_info, get_term_size_info_fd,
+        image::{ImageManager, IMAGE_MANAGER},
+        TermSizeInfo,
+    },
     widgets::{BoxOptions, Container, MarkdownDocumentBuilder, WidgetTree},
 };
 
 #[instrument(skip(nvim, md, session))]
 async fn build_hover_doc_image<W>(
     nvim: Neovim<W>, session: Arc<NeovimSession>, md: &str,
-) -> anyhow::Result<Vec<u8>>
+) -> anyhow::Result<(Vec<u8>, RectSize<f32>)>
 where
     W: AsyncWrite + Send + Unpin + 'static,
 {
@@ -64,6 +69,7 @@ where
     let mut widget_tree = WidgetTree::new();
     widget_tree.new_root(Rc::new(container))?;
     widget_tree.compute_layout(width, height)?;
+    let image_size = widget_tree.result_size()?;
 
     let renderer =
         Rc::new(RefCell::new(Renderer::new(width as u32, height as u32)?));
@@ -74,7 +80,48 @@ where
 
     info!("Data len: {}", data.len());
 
-    Ok(data)
+    Ok((data, image_size))
+}
+
+#[instrument(skip(nvim))]
+async fn image_offset_to_term(
+    nvim: &Neovim<NvimWriter>, image_size: RectSize<f32>, offset: (i32, i32),
+) -> anyhow::Result<(u32, u32)> {
+    let term_size = NeovimSession::get_term_size(nvim).await?;
+    let term_size = TermSizeInfo::new_from_nvim_term(term_size);
+    let image_cell_width =
+        (image_size.width / term_size.cell_width).ceil() as i32;
+    let image_cell_height =
+        (image_size.height / term_size.cell_height).ceil() as i32;
+    let (cur_row, cur_col) =
+        NeovimSession::cursor_position_to_client(nvim).await?;
+    let x_offset = if cur_col + offset.0 + image_cell_width > term_size.cols {
+        term_size.cols - image_cell_width
+    } else {
+        cur_col + offset.0
+    };
+    let y_offset = if cur_row + offset.1 + image_cell_height > term_size.rows {
+        term_size.rows - image_cell_height
+    } else {
+        cur_row + offset.1
+    };
+    // let x_offset =
+    //     (term_size.cols - cur_col - image_cell_width + offset.0).min(0);
+    // let y_offset =
+    //     (term_size.rows - cur_row - image_cell_height + offset.1).min(0);
+    info!(
+        "cursor: (r:{}, c:{}), image: (w:{}, h:{}), offset: (x:{}, y:{})",
+        cur_row,
+        cur_col,
+        image_cell_width,
+        image_cell_height,
+        x_offset,
+        y_offset
+    );
+    Ok((
+        (x_offset as f32 * term_size.cell_width) as u32,
+        (y_offset as f32 * term_size.cell_height) as u32,
+    ))
 }
 
 #[instrument(skip(nvim))]
@@ -99,19 +146,19 @@ async fn process_req_start_hover(
         let ed = std::time::Instant::now();
         info!("build hover doc image cost: {:?}", (ed - st).as_millis());
         match image {
-            Ok(image) => {
+            Ok((image, image_size)) => {
                 let image =
                     IMAGE_MANAGER.lock().new_image_from_id_buffer(id, image);
                 let (x, y) = {
                     let cfg = CONFIG.lock();
                     (cfg.hover.window.x_offset, cfg.hover.window.y_offset)
                 };
-                let writer = session.get_tty_writer(&nvim).await.unwrap();
-                let mut writer = writer.lock().await;
-                image
-                    .render_at(&mut writer, x.ceil() as u32, y.ceil() as u32)
+                let (x, y) = image_offset_to_term(&nvim, image_size, (x, y))
                     .await
                     .unwrap();
+                let writer = session.get_tty_writer(&nvim).await.unwrap();
+                let mut writer = writer.lock().await;
+                image.render_at(&mut writer, x, y).await.unwrap();
             }
             Err(err) => {
                 warn!("Error building hover doc image: {}", err);

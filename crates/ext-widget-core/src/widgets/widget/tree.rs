@@ -79,6 +79,20 @@ impl WidgetTree {
         self.paint_node(root, renderer, Location { x: 0., y: 0. })
     }
 
+    pub fn result_size(&self) -> anyhow::Result<RectSize<f32>> {
+        if self.root.is_none() {
+            bail!("root is not set");
+        }
+        let root = self.root.unwrap();
+        let ret: RectSize<f32> = self
+            .inner
+            .layout(root)
+            .map(|l| l.size.into())
+            .context("No size????")?;
+
+        Ok(ret)
+    }
+
     fn paint_node(
         &self, node: NodeId, renderer: Rc<RefCell<Renderer>>,
         top_left: Location,
