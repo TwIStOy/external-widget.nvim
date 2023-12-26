@@ -8,14 +8,14 @@ use std::{
 
 use anyhow::{bail, Context};
 use async_recursion::async_recursion;
-use futures::{AsyncWrite, Future};
+use futures::AsyncWrite;
 use libloading::Library;
 use nvim_rs::Neovim;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use regex::Regex;
 use rmpv::ext::from_value;
-use tracing::{info, instrument};
+use tracing::instrument;
 use tree_sitter::{Language, Parser};
 
 use crate::term::TermWriter;

@@ -1,17 +1,11 @@
 [workspace]
 resolver = "2"
 members = [
-  "crates/bin",
-  "crates/core",
-  "crates/widgets",
   "crates/ext-widget-core",
   "crates/ext-widget-bin",
 ]
 
 [workspace.dependencies]
-external-widget-core = { path = "crates/core" }
-external-widget-widgets = { path = "crates/widgets" }
-
 nvim-rs = { version = "0.6.0", features = ["use_tokio"] }
 async-trait = "0.1.74"
 tokio = { version = "1.35.0" }
@@ -30,3 +24,10 @@ futures = "0.3.29"
 serde = { version = "1.0.193", features = ["derive"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "serde"] }
+
+[profile.release]
+lto = "fat"
+panic = "abort"
+codegen-units = 1
+debug = false
+

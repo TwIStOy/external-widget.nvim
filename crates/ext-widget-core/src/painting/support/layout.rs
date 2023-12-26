@@ -2,9 +2,8 @@ use std::ops::{Add, AddAssign};
 
 use serde::{Deserialize, Serialize};
 use taffy::{LengthPercentage, LengthPercentageAuto, Point, Rect};
-use thiserror::Error;
 
-use super::{FlexibleLength, FlexibleLengthAuto, ParseFlexibleLengthError};
+use super::{FlexibleLength, FlexibleLengthAuto};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct BoxConstraints {

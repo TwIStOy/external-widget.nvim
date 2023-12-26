@@ -14,7 +14,9 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(width: u32, height: u32) -> anyhow::Result<Self> {
-        let surface = surfaces::raster_n32_premul((1000, 1000)).unwrap();
+        let surface =
+            surfaces::raster_n32_premul((width as i32, height as i32))
+                .context("Create surface failed")?;
         Ok(Self { surface })
     }
 
