@@ -85,7 +85,7 @@ fn default_mono_font() -> Vec<String> {
 }
 
 fn default_font_size() -> f32 {
-    16.0
+    18.0
 }
 
 pub static CONFIG: Lazy<Mutex<ExtWidgetConfig>> =
