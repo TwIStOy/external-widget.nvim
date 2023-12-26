@@ -321,8 +321,6 @@ where
             get_all_captures(&code, &codeblock.info, self).unwrap_or_default();
         highlights.sort();
 
-        info!("code?: {:?}", code);
-
         let mut m = 0usize;
         let mut offset = 0usize;
         for ch in code.chars() {
@@ -340,7 +338,6 @@ where
                 }
                 m += 1;
             }
-            info!("ch?: {:?}", ch.to_string());
             block.last_paragraph.add_text(&ch.to_string());
             offset += ch.len_utf8();
         }
