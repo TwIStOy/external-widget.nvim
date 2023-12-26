@@ -50,6 +50,7 @@ pub(super) struct BlockContext<'a> {
     block_widgets: Vec<Rc<dyn Widget>>,
     font_collection: &'a FontCollection,
     last_paragraph: ParagraphBuilder,
+    font_size_scale: f32,
 }
 
 impl<'a> BlockContext<'a> {
@@ -63,6 +64,7 @@ impl<'a> BlockContext<'a> {
                 paragraph_style,
                 font_collection,
             ),
+            font_size_scale: 1.0,
         }
     }
 
@@ -77,6 +79,7 @@ impl<'a> BlockContext<'a> {
             block_widgets: Vec::new(),
             font_collection,
             last_paragraph: paragraph_builder,
+            font_size_scale: other.font_size_scale,
         }
     }
 
@@ -114,9 +117,9 @@ where
     W: AsyncWrite + Send + Unpin + 'static,
 {
     fn update_text_tyle(&self, group: &str, style: &mut TextStyle) {
-        self.highlight_infos
-            .get(group)
-            .map(|hl| hl.update_text_tyle(style));
+        if let Some(hl) = self.highlight_infos.get(group) {
+            hl.update_text_tyle(style)
+        }
     }
 
     fn default_paragraph_style(&self) -> ParagraphStyle {
@@ -233,7 +236,7 @@ where
         let mut style = block.last_paragraph.peek_style();
         self.update_text_tyle("@text.literal.markdown_inline", &mut style);
         style.set_font_families(&self.opts.mono_font);
-        style.set_font_size(self.opts.mono_font_size);
+        style.set_font_size(self.opts.mono_font_size * block.font_size_scale);
 
         block.last_paragraph.push_style(&style);
         block.last_paragraph.add_text(&c.literal);
@@ -286,7 +289,7 @@ where
                 let hl = self.highlight_infos.get("Normal");
                 Ok(Rc::new(Container::new(
                     BoxDecoration {
-                        color: hl.map(|x| x.fg).flatten().unwrap_or_default(),
+                        color: hl.and_then(|x| x.fg).unwrap_or_default(),
                         border: BoxBorder::NONE,
                     },
                     BoxOptions {
@@ -370,6 +373,7 @@ where
         let mut style = block.last_paragraph.peek_style();
         style.set_font_families(&self.opts.normal_font);
         style.set_font_size(self.opts.normal_font_size * scale);
+        block.font_size_scale = scale;
         block.last_paragraph.push_style(&style);
         for child in node.children() {
             assert!(!child.data.borrow().value.block());

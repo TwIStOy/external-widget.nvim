@@ -3,6 +3,7 @@ local Utils = require("external-widget.utils")
 ---@class ExtWidget.Client
 ---@field private ch number
 ---@field private kind 'embed' | 'tcp'
+---@field private process vim.SystemObj?
 local Client = {}
 
 ---@return ExtWidget.Client
@@ -10,7 +11,8 @@ function Client.new_embed()
 	local cmd = Utils.get_package_path()
 	cmd = cmd .. "/target/release/ext-widget"
 	local ch = vim.fn.jobstart({ cmd, "embed" }, {
-		rpc = 1,
+		rpc = true,
+		detach = true,
 		on_exit = function(_, code)
 			if code ~= 0 then
 				print("external-widget: failed to start server")
@@ -30,13 +32,32 @@ end
 ---@param addr string
 ---@return ExtWidget.Client
 function Client.new_tcp(addr)
-	local ch = vim.fn.sockconnect("tcp", addr, {
-		rpc = 1,
-	})
+	local cmd = Utils.get_package_path()
+	cmd = cmd .. "/target/release/ext-widget"
+
+	local process = vim.system({ cmd, "serve" })
+	local ch
+	local max_try = 100
+	while true do
+		local succ, ret = pcall(vim.fn.sockconnect, "tcp", addr, {
+			rpc = 1,
+		})
+		if succ then
+      ch = ret
+			break
+		end
+		vim.wait(10)
+		max_try = max_try - 1
+		if max_try == 0 then
+			error("Failed to connect external-widget process")
+		end
+	end
+
 	if ch > 0 then
 		return setmetatable({
 			ch = ch,
 			kind = "tcp",
+			process = process,
 		}, { __index = Client })
 	else
 		error("Failed to connect external-widget process")
@@ -48,6 +69,7 @@ function Client:close()
 		vim.fn.jobstop(self.ch)
 	else
 		vim.fn.chanclose(self.ch)
+		self.process:kill(9)
 	end
 end
 

@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
 use futures::AsyncWrite;
+use libc;
 use nvim_rs::Neovim;
 use tokio::{
     fs::File,
@@ -43,6 +44,7 @@ impl TermWriter {
         let writer = tokio::fs::OpenOptions::new()
             .write(true)
             .read(false)
+            .custom_flags(libc::O_NOCTTY | libc::O_ACCMODE)
             .open(&tty)
             .await?;
         let writer = BufWriter::new(writer);
@@ -60,6 +62,7 @@ impl TermWriter {
         let writer = tokio::fs::OpenOptions::new()
             .write(true)
             .read(false)
+            .custom_flags(libc::O_NOCTTY | libc::O_ACCMODE)
             .open(tty)
             .await?;
         let writer = BufWriter::new(writer);

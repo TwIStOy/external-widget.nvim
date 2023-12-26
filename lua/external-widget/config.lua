@@ -25,7 +25,7 @@ local default_config = {
 ---@param config ExtWidget.Config
 local function setup(config)
   config = config or {}
-	local connect = vim.F.if_nil(config.connect, "embed")
+	local connect = vim.F.if_nil(config.connect, "127.0.0.1:7000")
 	local client
 	if connect == "embed" then
 		client = Rpc.Client.new_embed()
