@@ -1,9 +1,25 @@
+use std::ops::Sub;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct RectSize<T> {
     pub width: T,
     pub height: T,
+}
+
+impl<T> Sub<RectSize<T>> for RectSize<T>
+where
+    T: Sub<Output = T>,
+{
+    type Output = Self;
+
+    fn sub(self, rhs: RectSize<T>) -> Self::Output {
+        Self {
+            width: self.width - rhs.width,
+            height: self.height - rhs.height,
+        }
+    }
 }
 
 impl<T: Default> Default for RectSize<T> {

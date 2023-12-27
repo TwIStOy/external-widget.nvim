@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
+use taffy::Rect;
 
 use crate::painting::{
     Axis, BoxConstraints, FlexibleLength, Margin, Padding, RectSize,
@@ -17,6 +18,8 @@ pub struct BoxOptions {
     pub axis: Axis,
     #[serde(default)]
     pub gap: RectSize<FlexibleLength>,
+    #[serde(default)]
+    pub border: f32,
 }
 
 impl From<BoxOptions> for taffy::Style {
@@ -34,6 +37,12 @@ impl From<BoxOptions> for taffy::Style {
             },
             flex_direction: value.axis.into(),
             gap: value.gap.into(),
+            border: Rect {
+                left: taffy::LengthPercentage::Length(value.border),
+                right: taffy::LengthPercentage::Length(value.border),
+                top: taffy::LengthPercentage::Length(value.border),
+                bottom: taffy::LengthPercentage::Length(value.border),
+            },
             ..Default::default()
         }
     }

@@ -99,8 +99,8 @@ where
 }
 
 fn visit_node_children<'a>(node: &'a AstNode<'a>, infos: &mut Vec<String>) {
-    let mut children = node.children();
-    while let Some(child) = children.next() {
+    let children = node.children();
+    for child in children {
         visit_node(child, infos);
     }
 }

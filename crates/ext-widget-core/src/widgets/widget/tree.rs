@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use anyhow::{bail, Context};
 use taffy::{AvailableSpace, NodeId, TaffyTree, TraversePartialTree};
-use tracing::{instrument, trace};
+use tracing::{info, instrument, trace};
 
 use crate::painting::{Location, RectSize, RenderCtx, Renderer};
 
@@ -84,11 +84,14 @@ impl WidgetTree {
             bail!("root is not set");
         }
         let root = self.root.unwrap();
-        let ret: RectSize<f32> = self
-            .inner
-            .layout(root)
-            .map(|l| l.size.into())
-            .context("No size????")?;
+        let layout = self.inner.layout(root)?;
+
+        info!("layout?: {layout:?}");
+
+        let border = layout.border;
+        let mut ret: RectSize<f32> = layout.size.into();
+        ret.width += border.left + border.right;
+        ret.height += border.top + border.bottom;
 
         Ok(ret)
     }

@@ -112,9 +112,11 @@ pub async fn display_image(w: &mut TermWriter, id: ID) -> anyhow::Result<()> {
     cmd.send(None, w).await
 }
 
-pub async fn delete_image(w: &mut TermWriter, id: ID) -> anyhow::Result<()> {
+pub async fn delete_image(
+    w: &mut TermWriter, id: ID, hard: bool,
+) -> anyhow::Result<()> {
     let action = ActionDelete {
-        hard: true,
+        hard,
         target: DeleteTarget::ID {
             placement: Placement(Some(id.0)),
         },

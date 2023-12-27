@@ -17,13 +17,13 @@ use crate::term::{
 };
 
 static IMAGE_ID: AtomicU32 = AtomicU32::new(1);
+static IMAGE_SET_ID: AtomicU32 = AtomicU32::new(1);
 pub static IMAGE_MANAGER: once_cell::sync::Lazy<Mutex<ImageManager>> =
     once_cell::sync::Lazy::new(|| Mutex::new(ImageManager::new()));
 
 #[derive(Debug)]
 pub struct ImageManager {
-    images: HashMap<NonZeroU32, Arc<Image>>,
-    image_sets: HashMap<NonZeroU32, Arc<Mutex<ImageSet>>>,
+    image_sets: HashMap<NonZeroU32, Arc<ImageSet>>,
 }
 
 #[derive(Debug)]
@@ -34,53 +34,58 @@ pub struct Image {
 }
 
 #[derive(Debug)]
-pub struct ImageSet {
-    id: NonZeroU32,
-    images: Vec<Arc<Image>>,
+struct ImageSetDisplayState {
     index: usize,
     last_zindex: u32,
     last_rendered_pos: Option<(u32, u32)>,
 }
 
+#[derive(Debug)]
+pub struct ImageSet {
+    id: NonZeroU32,
+    images: Vec<Arc<Image>>,
+    state: Mutex<ImageSetDisplayState>,
+}
+
 impl ImageManager {
     fn new() -> Self {
         Self {
-            images: HashMap::new(),
             image_sets: HashMap::new(),
         }
     }
 
-    pub fn alloc_id() -> NonZeroU32 {
-        let id: NonZeroU32 = IMAGE_ID
+    pub fn alloc_set_id() -> NonZeroU32 {
+        let id: NonZeroU32 = IMAGE_SET_ID
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
             .try_into()
             .unwrap();
         id
     }
 
-    pub fn new_image_from_buffer(&mut self, buffer: Vec<u8>) -> Arc<Image> {
-        let image = Image::from_buffer(buffer);
-        let image = Arc::new(image);
-        self.images.insert(image.id, image.clone());
-        image
+    pub fn new_image_set(
+        &mut self, images: Vec<Arc<Image>>,
+    ) -> anyhow::Result<Arc<ImageSet>> {
+        let image_set = ImageSet::new(images)?;
+        let id = image_set.id;
+        self.image_sets.insert(id, Arc::new(image_set));
+        Ok(self.image_sets.get(&id).unwrap().clone())
     }
 
-    pub fn new_image_from_id_buffer(
-        &mut self, id: NonZeroU32, buffer: Vec<u8>,
-    ) -> Arc<Image> {
-        let image = Image::from_id_buffer(id, buffer);
-        let image = Arc::new(image);
-        self.images.insert(image.id, image.clone());
-        image
+    pub fn new_image_set_with_id(
+        &mut self, id: NonZeroU32, images: Vec<Arc<Image>>,
+    ) -> anyhow::Result<Arc<ImageSet>> {
+        let image_set = ImageSet::new_with_id(id, images)?;
+        self.image_sets.insert(id, Arc::new(image_set));
+        Ok(self.image_sets.get(&id).unwrap().clone())
     }
 
-    pub fn find_image(&self, id: NonZeroU32) -> Option<Arc<Image>> {
-        self.images.get(&id).cloned()
+    pub fn find_image_set(&self, id: NonZeroU32) -> Option<Arc<ImageSet>> {
+        self.image_sets.get(&id).cloned()
     }
 }
 
 impl Image {
-    fn from_id_buffer(id: NonZeroU32, buffer: Vec<u8>) -> Self {
+    pub fn new_from_buffer_with_id(id: NonZeroU32, buffer: Vec<u8>) -> Self {
         Self {
             id,
             buffer,
@@ -88,7 +93,7 @@ impl Image {
         }
     }
 
-    fn from_buffer(buffer: Vec<u8>) -> Self {
+    pub fn new_from_buffer(buffer: Vec<u8>) -> Self {
         let id: NonZeroU32 = IMAGE_ID
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
             .try_into()
@@ -152,9 +157,9 @@ impl Image {
 
     #[instrument(skip(self))]
     pub async fn delete_image(
-        &self, writer: &mut TermWriter,
+        &self, writer: &mut TermWriter, hard: bool,
     ) -> anyhow::Result<()> {
-        delete_image(writer, ID(self.id)).await?;
+        delete_image(writer, ID(self.id), hard).await?;
         {
             let mut transmitted = self.transmitted.lock();
             *transmitted = false;
@@ -163,38 +168,91 @@ impl Image {
     }
 }
 
-impl ImageSet {
-    pub fn new(images: Vec<Vec<u8>>) -> Self {}
+impl ImageSetDisplayState {
+    fn new() -> Self {
+        Self {
+            index: 0,
+            last_zindex: 1,
+            last_rendered_pos: None,
+        }
+    }
+}
 
-    pub async fn delte_images(
-        &self, writer: &mut TermWriter,
+impl ImageSet {
+    pub fn new(images: Vec<Arc<Image>>) -> anyhow::Result<Self> {
+        if images.is_empty() {
+            bail!("ImageSet must have at least one image");
+        }
+        Ok(Self {
+            id: NonZeroU32::try_from(
+                IMAGE_SET_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+            )
+            .unwrap(),
+            images,
+            state: Mutex::new(ImageSetDisplayState::new()),
+        })
+    }
+
+    pub fn new_with_id(
+        id: NonZeroU32, images: Vec<Arc<Image>>,
+    ) -> anyhow::Result<Self> {
+        if images.is_empty() {
+            bail!("ImageSet must have at least one image");
+        }
+        Ok(Self {
+            id,
+            images,
+            state: Mutex::new(ImageSetDisplayState::new()),
+        })
+    }
+
+    pub async fn delete_image(
+        &self, writer: &mut TermWriter, hard: bool,
     ) -> anyhow::Result<()> {
         for image in &self.images {
-            image.delete_image(writer).await?;
+            image.delete_image(writer, hard).await?;
         }
         Ok(())
     }
 
     pub async fn render_at(
-        &mut self, writer: &mut TermWriter, x: u32, y: u32,
+        &self, writer: &mut TermWriter, x: u32, y: u32,
     ) -> anyhow::Result<()> {
-        self.last_rendered_pos = Some((x, y));
-        let image = &self.images[self.index];
-        image.render_at(writer, x, y, self.last_zindex).await
+        let (image, z) = {
+            let mut state = self.state.lock();
+            state.last_rendered_pos = Some((x, y));
+            let image = &self.images[state.index];
+            (image, state.last_zindex)
+        };
+        image.render_at(writer, x, y, z).await
     }
 
     pub async fn next_image(
         &mut self, writer: &mut TermWriter,
     ) -> anyhow::Result<()> {
-        if self.last_rendered_pos.is_none() {
-            bail!("Must render at least once then call next_image");
-        }
+        let (previous, image, (x, y, z)) = {
+            let mut state = self.state.lock();
 
-        let (x, y) = self.last_rendered_pos.unwrap();
-        self.index = (self.index + 1) % self.images.len();
-        self.last_zindex += 1;
+            if state.last_rendered_pos.is_none() {
+                bail!("Must render at least once then call next_image");
+            }
 
-        self.images[self.index].render_at(writer, x, y, self.last_zindex);
+            let (x, y) = state.last_rendered_pos.unwrap();
+            let previous_index = state.index;
+            state.index = (state.index + 1) % self.images.len();
+            if previous_index == state.index {
+                return Ok(());
+            }
+            state.last_zindex += 1;
+            (
+                &self.images[previous_index],
+                &self.images[state.index],
+                (x, y, state.last_zindex),
+            )
+        };
+
+        previous.delete_image(writer, false).await?;
+        image.render_at(writer, x, y, z).await?;
 
         Ok(())
     }

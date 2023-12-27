@@ -3,7 +3,7 @@ use std::rc::Rc;
 use skia_safe::Paint;
 
 use crate::{
-    painting::{BoxDecoration, Margin, RectSize, SpacePolicy},
+    painting::{BoxDecoration, Location, Margin, RectSize, SpacePolicy},
     widgets::{
         widget::{LayoutElement, Widget, WidgetKey},
         BoxOptions,
@@ -108,9 +108,24 @@ impl Widget for Container {
             fill_paint.set_color(color);
         }
 
-        canvas
-            .draw_round_rect(rect, radius, radius, &fill_paint)
-            .draw_round_rect(rect, radius, radius, &stroke_paint);
+        canvas.draw_round_rect(rect, radius, radius, &fill_paint);
+
+        let border_top_left = context.top_left_location
+            + Location {
+                x: self.decoration.border.width / 2.0,
+                y: self.decoration.border.width / 2.0,
+            };
+        let border_size = context.size
+            - RectSize {
+                width: self.decoration.border.width,
+                height: self.decoration.border.width,
+            };
+        canvas.draw_round_rect(
+            skia_safe::Rect::from_point_and_size(border_top_left, border_size),
+            radius,
+            radius,
+            &stroke_paint,
+        );
 
         Ok(())
     }

@@ -241,6 +241,17 @@ impl Add<Point<f32>> for Location {
     }
 }
 
+impl Add<Location> for Location {
+    type Output = Self;
+
+    fn add(self, rhs: Location) -> Self::Output {
+        Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
+    }
+}
+
 impl Location {
     pub const ZERO: Location = Location { x: 0.0, y: 0.0 };
 }

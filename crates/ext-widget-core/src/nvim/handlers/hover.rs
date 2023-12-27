@@ -11,7 +11,7 @@ use crate::{
     nvim::{handler::NeovimService, NeovimSession, NvimWriter, CONFIG},
     painting::{BoxBorder, BoxDecoration, Color, Padding, RectSize, Renderer},
     term::{
-        image::{ImageManager, IMAGE_MANAGER},
+        image::{Image, ImageManager, IMAGE_MANAGER},
         TermSizeInfo,
     },
     widgets::{BoxOptions, Container, MarkdownDocumentBuilder, WidgetTree},
@@ -57,7 +57,7 @@ where
             },
         },
         BoxOptions {
-            padding: Padding::all(10.0.into()),
+            padding: Padding::all(5.0.into()),
             ..Default::default()
         },
         widget,
@@ -81,8 +81,6 @@ where
         height,
         200.,
     )?;
-
-    info!("Data len: {}", data.len());
 
     Ok((data, image_size))
 }
@@ -142,17 +140,23 @@ async fn process_req_start_hover(
     if md.is_empty() {
         bail!("hover expects non-empty markdown");
     }
-    let id = ImageManager::alloc_id();
+    let id = ImageManager::alloc_set_id();
     tokio::spawn(async move {
         let st = std::time::Instant::now();
-        let image =
+        let images =
             build_hover_doc_image(nvim.clone(), session.clone(), &md).await;
         let ed = std::time::Instant::now();
         info!("build hover doc image cost: {:?}", (ed - st).as_millis());
-        match image {
-            Ok((image, image_size)) => {
-                let image =
-                    IMAGE_MANAGER.lock().new_image_from_id_buffer(id, image);
+        match images {
+            Ok((images, image_size)) => {
+                let images = images
+                    .into_iter()
+                    .map(|image| Arc::new(Image::new_from_buffer(image)))
+                    .collect::<Vec<_>>();
+                let image_set = IMAGE_MANAGER
+                    .lock()
+                    .new_image_set_with_id(id, images)
+                    .unwrap();
                 let (x, y) = {
                     let cfg = CONFIG.lock();
                     (cfg.hover.window.x_offset, cfg.hover.window.y_offset)
@@ -162,7 +166,7 @@ async fn process_req_start_hover(
                     .unwrap();
                 let writer = session.get_tty_writer(&nvim).await.unwrap();
                 let mut writer = writer.lock().await;
-                image.render_at(&mut writer, x, y, 0).await.unwrap();
+                image_set.render_at(&mut writer, x, y).await.unwrap();
             }
             Err(err) => {
                 warn!("Error building hover doc image: {}", err);
@@ -191,11 +195,11 @@ async fn process_req_stop_hover(
     let id =
         NonZeroU32::try_from(args[0].as_u64().context("Expect u64")? as u32)?;
     tokio::spawn(async move {
-        let image = IMAGE_MANAGER.lock().find_image(id);
+        let image = IMAGE_MANAGER.lock().find_image_set(id);
         if let Some(image) = image {
             let writer = session.get_tty_writer(&nvim).await.unwrap();
             let mut writer = writer.lock().await;
-            if let Err(e) = image.delete_image(&mut writer).await {
+            if let Err(e) = image.delete_image(&mut writer, true).await {
                 nvim.err_writeln(&format!("Error deleting image: {}", e))
                     .await
                     .unwrap_or_else(|e| {
