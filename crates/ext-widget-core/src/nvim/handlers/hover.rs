@@ -57,7 +57,7 @@ where
             },
         },
         BoxOptions {
-            padding: Padding::all(5.0.into()),
+            padding: Padding::all(8.0.into()),
             ..Default::default()
         },
         widget,

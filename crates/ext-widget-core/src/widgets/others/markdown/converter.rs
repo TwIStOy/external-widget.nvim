@@ -15,13 +15,14 @@ use skia_safe::{
     },
     FontStyle,
 };
-use tracing::{info, instrument, trace};
+use tracing::{instrument, trace};
 use tree_sitter::{Parser, Query};
 
 use crate::{
     nvim::{HighlightInfos, NeovimSession},
     painting::{
-        BoxBorder, BoxConstraints, BoxDecoration, FlexibleLengthAuto, Margin,
+        BoxBorder, BoxConstraints, BoxDecoration, Color, FlexibleLength,
+        FlexibleLengthAuto, Margin,
     },
     widgets::{widget::Widget, BoxOptions, Column, Container, RichText, Row},
 };
@@ -437,7 +438,30 @@ where
         };
         let marker = match node_list.list_type {
             comrak::nodes::ListType::Bullet => {
-                format!("{} ", node_list.bullet_char as char)
+                let hl = self.highlight_infos.get("Normal");
+                let size = block.last_paragraph.peek_style().font_size();
+                Rc::new(Container::new(
+                    BoxDecoration {
+                        color: hl.and_then(|x| x.fg).unwrap_or_default(),
+                        ..Default::default()
+                    },
+                    BoxOptions {
+                        constraints: BoxConstraints {
+                            min_width: FlexibleLengthAuto::Fixed(size / 2.0),
+                            max_width: FlexibleLengthAuto::Fixed(size / 2.0),
+                            min_height: FlexibleLengthAuto::Fixed(size / 2.0),
+                            max_height: FlexibleLengthAuto::Fixed(size / 2.0),
+                        },
+                        margin: Margin {
+                            left: (size / 4.0).into(),
+                            right: (size / 4.0).into(),
+                            top: (size / 3.0).into(),
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
+                ))
+                // format!("{} ", node_list.bullet_char as char)
             }
             comrak::nodes::ListType::Ordered => {
                 let start = node_list.start;
@@ -446,11 +470,11 @@ where
                     comrak::nodes::ListDelimType::Period => ". ",
                     comrak::nodes::ListDelimType::Paren => ") ",
                 };
-                format!("{}{}", start + offset, delimitor)
+                let marker = format!("{}{}", start + offset, delimitor);
+                block.last_paragraph.add_text(&marker);
+                block.pack_content()?.unwrap()
             }
         };
-        block.last_paragraph.add_text(&marker);
-        let marker = block.pack_content()?.unwrap();
         let block = RefCell::new(block);
         for c in node.children() {
             if c.data.borrow().value.block() {
