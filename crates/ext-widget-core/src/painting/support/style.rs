@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, Copy)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct RectSize<T> {
     pub width: T,
     pub height: T,
@@ -22,11 +24,14 @@ impl<T> From<taffy::Size<T>> for RectSize<T> {
     }
 }
 
-impl<T> From<RectSize<T>> for taffy::Size<T> {
+impl<T, U> From<RectSize<T>> for taffy::Size<U>
+where
+    T: Into<U>,
+{
     fn from(value: RectSize<T>) -> Self {
         Self {
-            width: value.width,
-            height: value.height,
+            width: value.width.into(),
+            height: value.height.into(),
         }
     }
 }

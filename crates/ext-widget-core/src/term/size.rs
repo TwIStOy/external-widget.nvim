@@ -1,7 +1,6 @@
-use libc::winsize;
 use rustix::{
     fd::{AsRawFd, BorrowedFd, RawFd},
-    termios::{isatty, tcgetwinsize},
+    termios::{isatty, tcgetwinsize, Winsize},
 };
 
 use crate::nvim::NvimTermSize;
@@ -17,7 +16,7 @@ pub struct TermSizeInfo {
 }
 
 impl TermSizeInfo {
-    fn new(win: winsize) -> Self {
+    fn new(win: Winsize) -> Self {
         let screen_width = win.ws_xpixel as f32;
         let screen_height = win.ws_ypixel as f32;
         let rows = win.ws_row as i32;
@@ -52,7 +51,7 @@ impl TermSizeInfo {
     }
 }
 
-fn terminal_size_using_fd(fd: RawFd) -> Option<winsize> {
+fn terminal_size_using_fd(fd: RawFd) -> Option<Winsize> {
     let fd = unsafe { BorrowedFd::borrow_raw(fd) };
     if !isatty(fd) {
         return None;
@@ -62,11 +61,7 @@ fn terminal_size_using_fd(fd: RawFd) -> Option<winsize> {
 }
 
 pub fn get_term_size_info_fd(fd: RawFd) -> Option<TermSizeInfo> {
-    if let Some(size) = terminal_size_using_fd(fd) {
-        Some(TermSizeInfo::new(size))
-    } else {
-        None
-    }
+    terminal_size_using_fd(fd).map(TermSizeInfo::new)
 }
 
 pub fn get_term_size_info() -> Option<TermSizeInfo> {
@@ -76,11 +71,8 @@ pub fn get_term_size_info() -> Option<TermSizeInfo> {
         terminal_size_using_fd(std::io::stderr().as_raw_fd())
     {
         Some(TermSizeInfo::new(size))
-    } else if let Some(size) =
-        terminal_size_using_fd(std::io::stdin().as_raw_fd())
-    {
-        Some(TermSizeInfo::new(size))
     } else {
-        None
+        terminal_size_using_fd(std::io::stdin().as_raw_fd())
+            .map(TermSizeInfo::new)
     }
 }

@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
-use crate::painting::{Axis, BoxConstraints, Margin, Padding};
+use crate::painting::{
+    Axis, BoxConstraints, FlexibleLength, Margin, Padding, RectSize,
+};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct BoxOptions {
@@ -13,6 +15,8 @@ pub struct BoxOptions {
     pub margin: Margin,
     #[serde(default)]
     pub axis: Axis,
+    #[serde(default)]
+    pub gap: RectSize<FlexibleLength>,
 }
 
 impl From<BoxOptions> for taffy::Style {
@@ -29,6 +33,7 @@ impl From<BoxOptions> for taffy::Style {
                 height: value.constraints.max_height.into(),
             },
             flex_direction: value.axis.into(),
+            gap: value.gap.into(),
             ..Default::default()
         }
     }

@@ -2,7 +2,8 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 
 use anyhow::{bail, Context};
 use comrak::nodes::{
-    AstNode, NodeCode, NodeCodeBlock, NodeHeading, NodeList, NodeValue,
+    AstNode, NodeCode, NodeCodeBlock, NodeHeading, NodeLink, NodeList,
+    NodeValue,
 };
 use futures::AsyncWrite;
 use nvim_rs::Neovim;
@@ -19,7 +20,9 @@ use tree_sitter::{Parser, Query};
 
 use crate::{
     nvim::{HighlightInfos, NeovimSession},
-    painting::{BoxBorder, BoxConstraints, BoxDecoration, FlexibleLengthAuto},
+    painting::{
+        BoxBorder, BoxConstraints, BoxDecoration, FlexibleLengthAuto, Margin,
+    },
     widgets::{widget::Widget, BoxOptions, Column, Container, RichText, Row},
 };
 
@@ -145,7 +148,6 @@ where
         'f: 'b,
     {
         let data = &node.data.borrow().value;
-        info!("visit_inline_node: {:?}", data);
         match data {
             NodeValue::Text(s) => self.visit_text(s, block),
             NodeValue::Emph => self.visit_emph(node, block),
@@ -155,8 +157,25 @@ where
             NodeValue::SoftBreak | NodeValue::LineBreak => {
                 self.visit_text("\n", block)
             }
+            NodeValue::Link(link) => self.visit_link(node, link, block),
             _ => bail!("Unsupported inline node: {:?}", data),
         }
+    }
+
+    fn visit_link<'a>(
+        &mut self, node: &'a AstNode<'a>, _link: &NodeLink,
+        block: &mut BlockContext<'f>,
+    ) -> anyhow::Result<()> {
+        let mut style = block.last_paragraph.peek_style();
+        style.set_decoration_type(
+            style.decoration_type() | TextDecoration::UNDERLINE,
+        );
+        block.last_paragraph.push_style(&style);
+        for child in node.children() {
+            self.visit_inline_node(child, block)?;
+        }
+        block.last_paragraph.pop();
+        Ok(())
     }
 
     #[instrument(level = "trace", skip_all)]
@@ -298,6 +317,7 @@ where
                             max_height: FlexibleLengthAuto::Fixed(2.0),
                             ..Default::default()
                         },
+                        margin: Margin::vertical(4.0.into()),
                         ..Default::default()
                     },
                 )))
@@ -356,7 +376,10 @@ where
             m += 1;
         }
 
-        Ok(block.pack_content()?.unwrap())
+        Ok(Rc::new(Container::new_margin_with_child(
+            Margin::vertical(0.0.into()),
+            block.pack_content()?.unwrap(),
+        )))
     }
 
     #[instrument(level = "trace", skip_all)]
@@ -379,7 +402,10 @@ where
             assert!(!child.data.borrow().value.block());
             self.visit_inline_node(child, &mut block)?;
         }
-        Ok(block.pack_content()?.unwrap())
+        Ok(Rc::new(Container::new_margin_with_child(
+            Margin::vertical(0.0.into()),
+            block.pack_content()?.unwrap(),
+        )))
     }
 
     #[instrument(level = "trace", skip_all)]
@@ -478,9 +504,9 @@ where
 
         let block = block.into_inner();
         let ret: Rc<dyn Widget> = match wrapper {
-            VirtialBlockWrapper::Column => {
-                Rc::new(Column::new_with_children(block.block_widgets))
-            }
+            VirtialBlockWrapper::Column => Rc::new(
+                Column::new_with_gap_children(4.0.into(), block.block_widgets),
+            ),
             VirtialBlockWrapper::Row => {
                 Rc::new(Row::new_with_children(block.block_widgets))
             }
@@ -489,8 +515,8 @@ where
     }
 }
 
-fn get_all_captures<'o, 'f, W>(
-    code: &str, lang: &str, converter: &Converter<'o, 'f, W>,
+fn get_all_captures<W>(
+    code: &str, lang: &str, converter: &Converter<'_, '_, W>,
 ) -> anyhow::Result<Vec<HighlightMarker>>
 where
     W: AsyncWrite + Send + Unpin + 'static,
@@ -509,7 +535,7 @@ where
     let mut cursor = tree_sitter::QueryCursor::new();
 
     let all_captures =
-        cursor.captures(&query, tree.root_node(), code.as_bytes());
+        cursor.captures(query, tree.root_node(), code.as_bytes());
 
     let mut ret = vec![];
     for (m, _) in all_captures {

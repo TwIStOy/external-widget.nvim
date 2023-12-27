@@ -3,7 +3,7 @@ use std::rc::Rc;
 use skia_safe::Paint;
 
 use crate::{
-    painting::{BoxDecoration, RectSize, SpacePolicy},
+    painting::{BoxDecoration, Margin, RectSize, SpacePolicy},
     widgets::{
         widget::{LayoutElement, Widget, WidgetKey},
         BoxOptions,
@@ -26,6 +26,30 @@ impl Container {
             decoration,
             options,
         }
+    }
+
+    pub fn new_with_child(
+        decoration: BoxDecoration, options: BoxOptions, child: Rc<dyn Widget>,
+    ) -> Self {
+        Self {
+            key: WidgetKey::next(),
+            child: Some(child),
+            decoration,
+            options,
+        }
+    }
+
+    pub fn new_margin_with_child(
+        margin: Margin, child: Rc<dyn Widget>,
+    ) -> Self {
+        Self::new_with_child(
+            BoxDecoration::default(),
+            BoxOptions {
+                margin,
+                ..Default::default()
+            },
+            child,
+        )
     }
 }
 

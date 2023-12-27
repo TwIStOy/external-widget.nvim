@@ -1,25 +1,22 @@
-use std::{cell::RefCell, fs::File, num::NonZeroU32, rc::Rc, sync::Arc};
+use std::{cell::RefCell, num::NonZeroU32, rc::Rc, sync::Arc};
 
 use anyhow::{bail, Context};
 use async_trait::async_trait;
 use futures::AsyncWrite;
 use nvim_rs::Neovim;
 use rmpv::Value;
-use rustix::fd::AsRawFd;
 use tracing::{info, instrument, warn};
 
 use crate::{
     nvim::{handler::NeovimService, NeovimSession, NvimWriter, CONFIG},
     painting::{BoxBorder, BoxDecoration, Color, Padding, RectSize, Renderer},
     term::{
-        get_term_size_info, get_term_size_info_fd,
         image::{ImageManager, IMAGE_MANAGER},
         TermSizeInfo,
     },
     widgets::{BoxOptions, Container, MarkdownDocumentBuilder, WidgetTree},
 };
 
-#[instrument(skip(nvim, md, session))]
 async fn build_hover_doc_image<W>(
     nvim: Neovim<W>, session: Arc<NeovimSession>, md: &str,
 ) -> anyhow::Result<(Vec<u8>, RectSize<f32>)>
@@ -50,7 +47,7 @@ where
     let background_color = background_color
         .guibg
         .unwrap_or_else(|| background_color.bg.unwrap_or_default());
-    let mut container = Container::new(
+    let container = Container::new_with_child(
         BoxDecoration {
             color: background_color,
             border: BoxBorder {
@@ -63,8 +60,8 @@ where
             padding: Padding::all(10.0.into()),
             ..Default::default()
         },
+        widget,
     );
-    container.child = Some(widget);
 
     let mut widget_tree = WidgetTree::new();
     widget_tree.new_root(Rc::new(container))?;
@@ -74,6 +71,10 @@ where
     let renderer =
         Rc::new(RefCell::new(Renderer::new(width as u32, height as u32)?));
     widget_tree.paint(renderer.clone())?;
+
+    for line in widget_tree.debug_tree()? {
+        info!("{}", line);
+    }
 
     let renderer = renderer.as_ref();
     let data = renderer.borrow_mut().snapshot_png_raw()?;

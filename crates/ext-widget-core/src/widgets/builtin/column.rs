@@ -1,7 +1,7 @@
 use std::{fmt::Debug, rc::Rc};
 
 use crate::{
-    painting::{Axis, RenderCtx},
+    painting::{Axis, FlexibleLength, RenderCtx},
     widgets::{
         widget::{LayoutElement, Widget, WidgetKey},
         BoxOptions,
@@ -11,6 +11,7 @@ use crate::{
 #[derive(Clone)]
 pub struct Column {
     key: WidgetKey,
+    gap: FlexibleLength,
     children: Vec<Rc<dyn Widget>>,
 }
 
@@ -25,7 +26,18 @@ impl Debug for Column {
 impl Column {
     pub fn new_with_children(children: Vec<Rc<dyn Widget>>) -> Self {
         let key = WidgetKey::next();
-        Self { key, children }
+        Self {
+            key,
+            children,
+            gap: FlexibleLength::Fixed(0.0),
+        }
+    }
+
+    pub fn new_with_gap_children(
+        gap: FlexibleLength, children: Vec<Rc<dyn Widget>>,
+    ) -> Self {
+        let key = WidgetKey::next();
+        Self { key, gap, children }
     }
 
     pub fn add_child(&mut self, child: Rc<dyn Widget>) {
