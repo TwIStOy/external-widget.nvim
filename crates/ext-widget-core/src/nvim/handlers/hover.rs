@@ -19,7 +19,7 @@ use crate::{
 
 async fn build_hover_doc_image<W>(
     nvim: Neovim<W>, session: Arc<NeovimSession>, md: &str,
-) -> anyhow::Result<(Vec<u8>, RectSize<f32>)>
+) -> anyhow::Result<(Vec<Vec<u8>>, RectSize<f32>)>
 where
     W: AsyncWrite + Send + Unpin + 'static,
 {
@@ -68,16 +68,19 @@ where
     widget_tree.compute_layout(width, height)?;
     let image_size = widget_tree.result_size()?;
 
-    let renderer =
-        Rc::new(RefCell::new(Renderer::new(width as u32, height as u32)?));
+    let renderer = Rc::new(RefCell::new(Renderer::new(
+        width.ceil() as u32,
+        image_size.height.ceil() as u32,
+    )?));
     widget_tree.paint(renderer.clone())?;
 
-    for line in widget_tree.debug_tree()? {
-        info!("{}", line);
-    }
-
     let renderer = renderer.as_ref();
-    let data = renderer.borrow_mut().snapshot_png_raw()?;
+    let data = renderer.borrow_mut().snapshot_png_raw_with_steps(
+        image_size.width,
+        image_size.height,
+        height,
+        200.,
+    )?;
 
     info!("Data len: {}", data.len());
 
@@ -159,7 +162,7 @@ async fn process_req_start_hover(
                     .unwrap();
                 let writer = session.get_tty_writer(&nvim).await.unwrap();
                 let mut writer = writer.lock().await;
-                image.render_at(&mut writer, x, y).await.unwrap();
+                image.render_at(&mut writer, x, y, 0).await.unwrap();
             }
             Err(err) => {
                 warn!("Error building hover doc image: {}", err);

@@ -403,7 +403,7 @@ where
             self.visit_inline_node(child, &mut block)?;
         }
         Ok(Rc::new(Container::new_margin_with_child(
-            Margin::vertical(0.0.into()),
+            Margin::vertical(2.0.into()),
             block.pack_content()?.unwrap(),
         )))
     }

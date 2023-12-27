@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use anyhow::Context;
 use base64::Engine;
-use skia_safe::{surfaces, Canvas, EncodedImageFormat, Surface};
+use skia_safe::{surfaces, Canvas, EncodedImageFormat, IRect, Surface};
 
 use super::{Location, RectSize};
 
@@ -50,6 +50,40 @@ impl Renderer {
             )
             .context("Failed to encode png")?;
         Ok(data.as_bytes().to_vec())
+    }
+
+    pub fn snapshot_png_raw_with_steps(
+        &mut self, image_width: f32, image_height: f32, max_height: f32,
+        step: f32,
+    ) -> anyhow::Result<Vec<Vec<u8>>> {
+        if image_height <= max_height {
+            return Ok(vec![self.snapshot_png_raw()?]);
+        }
+
+        let mut start: f32 = 0.;
+
+        let mut ret = vec![];
+        while start < image_height {
+            let image = self
+                .surface
+                .image_snapshot_with_bounds(IRect::from_xywh(
+                    0,
+                    start as i32,
+                    image_width as i32,
+                    max_height as i32,
+                ))
+                .context("Failed to take snapshot")?;
+            let data = image
+                .encode(
+                    &mut self.surface.direct_context(),
+                    EncodedImageFormat::PNG,
+                    None,
+                )
+                .context("Failed to encode png")?;
+            ret.push(data.as_bytes().to_vec());
+            start += step;
+        }
+        Ok(ret)
     }
 }
 
