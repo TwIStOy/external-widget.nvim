@@ -128,7 +128,21 @@ async fn image_offset_to_term(
 
 async fn open_dummy_window(nvim: Neovim<NvimWriter>) -> anyhow::Result<()> {
     let buf = nvim.create_buf(false, true).await?;
-    nvim.open_term(&buf, opts);
+    let win = nvim.open_win(
+        &buf,
+        true,
+        vec![
+            ("relative".into(), "cursor".into()),
+            ("row".into(), 1.into()),
+            ("col".into(), 1.into()),
+            ("width".into(), 1.into()),
+            ("height".into(), 1.into()),
+            ("style".into(), "minimal".into()),
+            ("zindex".into(), 1.into()),
+        ],
+    )
+    .await?;
+    nvim.set_keymap("n", "<C-d>", rhs, opts);
     Ok(())
 }
 
