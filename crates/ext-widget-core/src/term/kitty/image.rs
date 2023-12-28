@@ -228,7 +228,7 @@ impl ImageSet {
     }
 
     pub async fn next_image(
-        &mut self, writer: &mut TermWriter,
+        &self, writer: &mut TermWriter,
     ) -> anyhow::Result<()> {
         let (previous, image, (x, y, z)) = {
             let mut state = self.state.lock();
@@ -251,8 +251,40 @@ impl ImageSet {
             )
         };
 
-        previous.delete_image(writer, false).await?;
         image.render_at(writer, x, y, z).await?;
+        previous.delete_image(writer, false).await?;
+
+        Ok(())
+    }
+
+    pub async fn previous_image(
+        &self, writer: &mut TermWriter,
+    ) -> anyhow::Result<()> {
+        let (previous, image, (x, y, z)) = {
+            let mut state = self.state.lock();
+
+            if state.last_rendered_pos.is_none() {
+                bail!("Must render at least once then call next_image");
+            }
+
+            let (x, y) = state.last_rendered_pos.unwrap();
+            let previous_index = state.index;
+            state.index =
+                (state.index + self.images.len() - 1) % self.images.len();
+            if previous_index == state.index {
+                return Ok(());
+            }
+            state.last_zindex += 1;
+            (
+                &self.images[previous_index],
+                &self.images[state.index],
+                (x, y, state.last_zindex),
+            )
+        };
+
+        // render image first
+        image.render_at(writer, x, y, z).await?;
+        previous.delete_image(writer, false).await?;
 
         Ok(())
     }

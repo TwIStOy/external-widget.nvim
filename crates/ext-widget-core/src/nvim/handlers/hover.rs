@@ -211,10 +211,68 @@ async fn process_req_stop_hover(
     Ok(u32::from(id))
 }
 
+/// Expect name: "scroll_down_hover"
+#[instrument(skip(nvim))]
+async fn process_req_scroll_down(
+    args: Vec<Value>, nvim: Neovim<NvimWriter>, session: Arc<NeovimSession>,
+) -> anyhow::Result<u32> {
+    if args.len() != 1 {
+        bail!("scroll_down_hover expects 1 argument, got {}", args.len());
+    }
+    let id =
+        NonZeroU32::try_from(args[0].as_u64().context("Expect u64")? as u32)?;
+    tokio::spawn(async move {
+        let image = IMAGE_MANAGER.lock().find_image_set(id);
+        if let Some(image) = image {
+            let writer = session.get_tty_writer(&nvim).await.unwrap();
+            let mut writer = writer.lock().await;
+            if let Err(e) = image.next_image(&mut writer).await {
+                nvim.err_writeln(&format!("Error deleting image: {}", e))
+                    .await
+                    .unwrap_or_else(|e| {
+                        warn!("Error writing to nvim: {}", e);
+                    });
+            }
+        }
+    });
+    Ok(u32::from(id))
+}
+
+/// Expect name: "scroll_up_hover"
+#[instrument(skip(nvim))]
+async fn process_req_scroll_up(
+    args: Vec<Value>, nvim: Neovim<NvimWriter>, session: Arc<NeovimSession>,
+) -> anyhow::Result<u32> {
+    if args.len() != 1 {
+        bail!("scroll_up_hover expects 1 argument, got {}", args.len());
+    }
+    let id =
+        NonZeroU32::try_from(args[0].as_u64().context("Expect u64")? as u32)?;
+    tokio::spawn(async move {
+        let image = IMAGE_MANAGER.lock().find_image_set(id);
+        if let Some(image) = image {
+            let writer = session.get_tty_writer(&nvim).await.unwrap();
+            let mut writer = writer.lock().await;
+            if let Err(e) = image.previous_image(&mut writer).await {
+                nvim.err_writeln(&format!("Error deleting image: {}", e))
+                    .await
+                    .unwrap_or_else(|e| {
+                        warn!("Error writing to nvim: {}", e);
+                    });
+            }
+        }
+    });
+    Ok(u32::from(id))
+}
+
 #[derive(Debug)]
 pub(crate) struct StartHoverReq;
 #[derive(Debug)]
 pub(crate) struct StopHoverReq;
+#[derive(Debug)]
+pub(crate) struct ScrollDownHoverNotification;
+#[derive(Debug)]
+pub(crate) struct ScrollUpHoverNotification;
 
 #[async_trait]
 impl NeovimService for StartHoverReq {
@@ -238,6 +296,34 @@ impl NeovimService for StopHoverReq {
         session: Arc<NeovimSession>,
     ) -> Result<Value, Value> {
         match process_req_stop_hover(args, neovim, session).await {
+            Ok(v) => Ok(Value::from(v)),
+            Err(e) => Err(Value::from(e.to_string())),
+        }
+    }
+}
+
+#[async_trait]
+impl NeovimService for ScrollDownHoverNotification {
+    #[instrument(skip(self, neovim))]
+    async fn call(
+        &self, _name: String, args: Vec<Value>, neovim: Neovim<NvimWriter>,
+        session: Arc<NeovimSession>,
+    ) -> Result<Value, Value> {
+        match process_req_scroll_down(args, neovim, session).await {
+            Ok(v) => Ok(Value::from(v)),
+            Err(e) => Err(Value::from(e.to_string())),
+        }
+    }
+}
+
+#[async_trait]
+impl NeovimService for ScrollUpHoverNotification {
+    #[instrument(skip(self, neovim))]
+    async fn call(
+        &self, _name: String, args: Vec<Value>, neovim: Neovim<NvimWriter>,
+        session: Arc<NeovimSession>,
+    ) -> Result<Value, Value> {
+        match process_req_scroll_up(args, neovim, session).await {
             Ok(v) => Ok(Value::from(v)),
             Err(e) => Err(Value::from(e.to_string())),
         }

@@ -3,4 +3,4 @@ mod hover;
 mod notify;
 
 pub(super) use config::ConfigNotify;
-pub(super) use hover::{StartHoverReq, StopHoverReq};
+pub(super) use hover::*;

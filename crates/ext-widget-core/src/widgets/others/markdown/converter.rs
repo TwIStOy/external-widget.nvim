@@ -21,8 +21,7 @@ use tree_sitter::{Parser, Query};
 use crate::{
     nvim::{HighlightInfos, NeovimSession},
     painting::{
-        BoxBorder, BoxConstraints, BoxDecoration, Color, FlexibleLength,
-        FlexibleLengthAuto, Margin,
+        BoxBorder, BoxConstraints, BoxDecoration, FlexibleLengthAuto, Margin,
     },
     widgets::{widget::Widget, BoxOptions, Column, Container, RichText, Row},
 };

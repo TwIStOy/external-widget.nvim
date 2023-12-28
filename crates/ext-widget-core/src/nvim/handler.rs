@@ -6,7 +6,9 @@ use rmpv::Value;
 use tracing::{info, instrument, warn};
 
 use super::{
-    handlers::{ConfigNotify, StartHoverReq, StopHoverReq},
+    handlers::{
+        ConfigNotify, ScrollDownHoverNotification, StartHoverReq, StopHoverReq,
+    },
     NeovimSession, NvimWriter,
 };
 
@@ -29,6 +31,14 @@ impl NeovimHandler {
 
         noti_handlers
             .insert("update_config".to_string(), Box::new(ConfigNotify));
+        noti_handlers.insert(
+            "scroll_down_hover".to_string(),
+            Box::new(ScrollDownHoverNotification),
+        );
+        noti_handlers.insert(
+            "scroll_up_hover".to_string(),
+            Box::new(ScrollDownHoverNotification),
+        );
 
         Self {
             session: Arc::new(NeovimSession::new()),

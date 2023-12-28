@@ -4,6 +4,8 @@ local hover_group = vim.api.nvim_create_augroup("external_widget_hover", {
 	clear = true,
 })
 
+local current_image_id = nil
+
 ---@param client ExtWidget.Client
 ---@param err any
 ---@param res lsp.Hover
@@ -25,23 +27,35 @@ local function hover_callback(client, err, res)
 	vim.api.nvim_exec_autocmds("User", {
 		pattern = "ShowHover",
 	})
-	local image_id = client:request("start_hover", value)
+	current_image_id = client:request("start_hover", value)
 	vim.api.nvim_create_autocmd({
 		"CursorMoved",
 		"FocusLost",
 		"WinLeave",
 		"WinClosed",
-    "VimLeavePre",
+		"VimLeavePre",
 	}, {
 		once = true,
 		group = hover_group,
 		buffer = 0,
 		callback = function()
 			vim.o.eventignore = ""
-			client:request("stop_hover", image_id)
+			client:request("stop_hover", current_image_id)
 			return true
 		end,
 	})
+end
+
+---@param client ExtWidget.Client?
+local function scroll_down(client)
+	client = client or Rpc.get_global_client()
+	client:notify("scroll_down_hover", current_image_id)
+end
+
+---@param client ExtWidget.Client?
+local function scroll_up(client)
+	client = client or Rpc.get_global_client()
+	client:notify("scroll_up_hover", current_image_id)
 end
 
 ---@param client ExtWidget.Client?
@@ -55,4 +69,6 @@ end
 
 return {
 	show_hover = show_hover,
+	scroll_down = scroll_down,
+	scroll_up = scroll_up,
 }
