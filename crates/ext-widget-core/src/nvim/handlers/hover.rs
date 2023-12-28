@@ -126,6 +126,12 @@ async fn image_offset_to_term(
     ))
 }
 
+async fn open_dummy_window(nvim: Neovim<NvimWriter>) -> anyhow::Result<()> {
+    let buf = nvim.create_buf(false, true).await?;
+    nvim.open_term(&buf, opts);
+    Ok(())
+}
+
 #[instrument(skip(nvim))]
 async fn process_req_start_hover(
     args: Vec<Value>, nvim: Neovim<NvimWriter>, session: Arc<NeovimSession>,
@@ -167,6 +173,9 @@ async fn process_req_start_hover(
                 let writer = session.get_tty_writer(&nvim).await.unwrap();
                 let mut writer = writer.lock().await;
                 image_set.render_at(&mut writer, x, y).await.unwrap();
+
+                // create the placeholder window
+                open_dummy_window(nvim).await.unwrap();
             }
             Err(err) => {
                 warn!("Error building hover doc image: {}", err);
