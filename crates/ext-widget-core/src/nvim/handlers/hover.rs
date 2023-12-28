@@ -3,7 +3,7 @@ use std::{cell::RefCell, num::NonZeroU32, rc::Rc, sync::Arc};
 use anyhow::{bail, Context};
 use async_trait::async_trait;
 use futures::AsyncWrite;
-use nvim_rs::Neovim;
+use nvim_rs::{rpc::IntoVal, Neovim};
 use rmpv::Value;
 use tracing::{info, instrument, warn};
 
@@ -128,21 +128,32 @@ async fn image_offset_to_term(
 
 async fn open_dummy_window(nvim: Neovim<NvimWriter>) -> anyhow::Result<()> {
     let buf = nvim.create_buf(false, true).await?;
-    let win = nvim.open_win(
-        &buf,
-        true,
-        vec![
-            ("relative".into(), "cursor".into()),
-            ("row".into(), 1.into()),
-            ("col".into(), 1.into()),
-            ("width".into(), 1.into()),
-            ("height".into(), 1.into()),
-            ("style".into(), "minimal".into()),
-            ("zindex".into(), 1.into()),
-        ],
+    let win = nvim
+        .open_win(
+            &buf,
+            true,
+            vec![
+                ("relative".into(), "cursor".into()),
+                ("row".into(), 1.into()),
+                ("col".into(), 1.into()),
+                ("width".into(), 1.into()),
+                ("height".into(), 1.into()),
+                ("style".into(), "minimal".into()),
+                ("zindex".into(), 1.into()),
+            ],
+        )
+        .await?;
+    nvim.exec_lua(
+        r#"
+    local function setup(...)
+        require("external-widget.hover").setup_dummy_buffer(...)
+    end
+    setup(...)
+    "#,
+        vec![win.into_val(), buf.into_val()],
     )
     .await?;
-    nvim.set_keymap("n", "<C-d>", rhs, opts);
+
     Ok(())
 }
 

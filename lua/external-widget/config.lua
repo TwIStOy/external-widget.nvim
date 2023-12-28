@@ -19,25 +19,25 @@ local Rpc = require("external-widget.rpc")
 
 ---@type ExtWidget.Config
 local default_config = {
-    connect = "embed"
+  connect = "embed",
 }
 
 ---@param config ExtWidget.Config
 local function setup(config)
-    config = config or {}
-    local connect = vim.F.if_nil(config.connect, "127.0.0.1:7000")
-    local client
-    if connect == "embed" then
-        client = Rpc.Client.new_embed()
-    else
-        client = Rpc.Client.new_tcp(connect)
-    end
-    Rpc.setup_global_client(client)
-    -- clear connect field
-    config.connect = nil
-    client:notify("update_config", config)
+  config = config or {}
+  local connect = vim.F.if_nil(config.connect, "127.0.0.1:7000")
+  local client
+  if connect == "embed" then
+    client = Rpc.Client.new_embed()
+  else
+    client = Rpc.Client.new_tcp(connect)
+  end
+  Rpc.setup_global_client(client)
+  -- clear connect field
+  config.connect = nil
+  client:notify("update_config", config)
 end
 
 return {
-    setup = setup
+  setup = setup,
 }
