@@ -107,10 +107,6 @@ async fn image_offset_to_term(
     } else {
         cur_row + offset.1
     };
-    // let x_offset =
-    //     (term_size.cols - cur_col - image_cell_width + offset.0).min(0);
-    // let y_offset =
-    //     (term_size.rows - cur_row - image_cell_height + offset.1).min(0);
     info!(
         "cursor: (r:{}, c:{}), image: (w:{}, h:{}), offset: (x:{}, y:{})",
         cur_row,
